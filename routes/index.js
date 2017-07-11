@@ -7,6 +7,10 @@ var testResponse = {
 	numbers: [0,1,2,3,4,5,6],
 	names: ["Ruben", "Amanda", "Robert"]
 };
+
+router.get('/travelers', function(request, response, next) {
+	//Returns a list of travelers from the search query
+});
 /* Test page */
 router.get('/test', function(request, response, next) {
 	response.setHeader('Content-Type', 'application/json');
@@ -25,4 +29,7 @@ git push origin master
 
 git push heroku master
 
+To run locally:
+heroku local
+# if we do web, it does what's in web
 */
