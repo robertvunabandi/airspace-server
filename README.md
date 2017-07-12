@@ -1,10 +1,11 @@
-#Server for Shipping App
+# Server for Shipping App
 
-Main handle: ```https://mysterious-headland-54722.herokuapp.com/```.
+API base url: `https://mysterious-headland-54722.herokuapp.com/`
+API key: `KM64CQgEubDrTiHoJi7Yg3vmkOWOhovu3XtrCdDy`
 
-##Endpoints
+## Endpoints
+### /test   
 
-```/test```   
 This is a test method to see if the server is working. It returns: 
 ```
 {
@@ -12,4 +13,5 @@ This is a test method to see if the server is working. It returns:
 	names: ["Ruben", "Amanda", "Robert"]
 }
 ```
+
 

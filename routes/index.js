@@ -8,10 +8,12 @@ var testResponse = {
 	names: ["Ruben", "Amanda", "Robert"]
 };
 
+/* GET Travelers */
 router.get('/travelers', function(request, response, next) {
 	//Returns a list of travelers from the search query
 });
-/* Test page */
+
+/* GET test */
 router.get('/test', function(request, response, next) {
 	response.setHeader('Content-Type', 'application/json');
 	response.send(JSON.stringify(testResponse), null, 3);
@@ -27,9 +29,10 @@ git add <files>
 git commit -m "messages"
 git push origin master
 
-git push heroku master
+git push heroku master # seems like he pushes from github
 
 To run locally:
 heroku local
 # if we do web, it does what's in web
+
 */
