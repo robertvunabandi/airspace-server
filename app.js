@@ -46,6 +46,7 @@ app.use('/usr', users); // for users data
 
 // catch 404 and forward to error handler
 app.use(function(request, response, next) {
+	// console.log(request);
 	var err = new Error('Not Found');
 	err.status = 404;
 	next(err);

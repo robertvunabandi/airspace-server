@@ -1,17 +1,10 @@
 # Server for Shipping App
 
 API base url: `https://mysterious-headland-54722.herokuapp.com/`
-API key: `KM64CQgEubDrTiHoJi7Yg3vmkOWOhovu3XtrCdDy`
 
-## Endpoints
-### /test   
+For endpoints, refer to this
+[google doc](https://docs.google.com/document/d/1gxDEUpM6vEav1mEJS6665yV_-hMBGo2Uhwg0Q9yZuFc/edit?usp=sharing).  
 
-This is a test method to see if the server is working. It returns: 
-```
-{
-	numbers: [0,1,2,3,4,5,6],
-	names: ["Ruben", "Amanda", "Robert"]
-}
-```
+That link allows the person who uses it to edit the google doc. Since this repo is private, no one with no access should be able to edit it.
 
 

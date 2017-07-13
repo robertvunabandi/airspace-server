@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const Message = new Schema({
-	suid: {type: Number, required: true}, // id of the user that sends the message
-	ruid: {type: Number, required: true}, // id of the user that receives the message
+	suid: {type: String, required: true}, // id of the user that sends the message
+	ruid: {type: String, required: true}, // id of the user that receives the message
 	body: {type: String, required: true}, // ID on the key
 	time: {type: Number, required: true} // this is the time the message was sent in ms from 1900 (used with Date)
 });
