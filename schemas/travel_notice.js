@@ -6,6 +6,8 @@ const TravelNotice = new Schema({
 	airline: {type: String, required: true}, // ID on the key
 	flight_num: {type: Number, required: true}, // ID on the key
 	item_types: {type: Array, required: false}, // Types of items from [envelopes, small box, large box, clothing items, and other]
+	item_total: {type: Number, required: false}, // total number of items
+	item_other: {type: String, required: false}, // name of other item 
 	drop_off_flexibility: {type: String, required: false}, // flexibility of the user that's putting the travel noting
 	pick_up_flexibility: {type: String, required: false}, // flexibility of the user that's putting the travel noting
 
