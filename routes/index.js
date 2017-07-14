@@ -173,26 +173,28 @@ router.post("/travel_notice_add", function(request, response, next) {
 
 	// get the variables from the request
 	var travelNotice = new TravelNotice({
-		tuid: request.query.tuid,
-		airline: request.query.airline,
-		flight_num: request.query.flight_num,
-		item_types: request.query.item_types, // [envelope, smbox, lgbox, clothing, and other]
-		drop_off_flexibility: request.query.drop_off_flexibility,
-		pick_up_flexibility: request.query.pick_up_flexibility,
+		tuid: request.body.tuid,
+		airline: request.body.airline,
+		flight_num: request.body.flight_num,
+		item_types: request.body.item_types, // [envelope, smbox, lgbox, clothing, and other]
+		drop_off_flexibility: request.body.drop_off_flexibility,
+		pick_up_flexibility: request.body.pick_up_flexibility,
 		//Departure, dep
-		dep_iata: request.query.dep_iata,
-		dep_city: request.query.dep_city,
-		dep_day: request.query.dep_day,
-		dep_month: request.query.dep_month,
-		dep_year: request.query.dep_year,
-		dep_time: request.query.dep_time,
+		dep_iata: request.body.dep_iata,
+		dep_city: request.body.dep_city,
+		dep_min: request.body.dep_min,
+		dep_hour: request.body.dep_hour,
+		dep_day: request.body.dep_day,
+		dep_month: request.body.dep_month,
+		dep_year: request.body.dep_year,
 		//Arrival: arr
-		arr_iata: request.query.arr_iata,
-		arr_city: request.query.arr_city,
-		arr_day: request.query.arr_day,
-		arr_month: request.query.arr_month,
-		arr_year: request.query.arr_year,
-		arr_time: request.query.arr_time
+		arr_iata: request.body.arr_iata,
+		arr_city: request.body.arr_city,
+		arr_min: request.body.arr_min,
+		arr_hour: request.body.arr_hour,
+		arr_day: request.body.arr_day,
+		arr_month: request.body.arr_month,
+		arr_year: request.body.arr_year
 	});
 
 	// place this in the database
@@ -213,8 +215,6 @@ router.post("/travel_notice_add", function(request, response, next) {
 			callback(saving_error, 500);
 		}
 	});
-	res.setHeader('Content-Type', 'application/json');
-	response.send(JSON.stringify({message: "not implemented endpoint"}));
 });
 
 router.post("/travel_notice_update", function(request, response, next) {

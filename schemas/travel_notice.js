@@ -20,7 +20,8 @@ const TravelNotice = new Schema({
 	// Departure, dep
 	dep_iata: {type: String, required: true}, // airport code
 	dep_city: {type: String, required: true}, // airport city
-	dep_time: {type: String, required: true}, // time of flight, HH:MM
+	dep_min: {type: Number, required: true}, // minute of flight
+	dep_hour: {type: Number, required: true}, // hour of flight
 	dep_day: {type: Number, required: true}, // day of flight
 	dep_month: {type: Number, required: true}, // month of flight
 	dep_year: {type: Number, required: true}, // year of flight
@@ -28,7 +29,8 @@ const TravelNotice = new Schema({
 	// Arrival: arr
 	arr_iata: {type: String, required: true}, // airport code
 	arr_city: {type: String, required: true}, // airport city
-	arr_time: {type: String, required: true}, // time of flight, HH:MM
+	arr_min: {type: Number, required: true}, // minute of flight
+	arr_hour: {type: Number, required: true}, // hour of flight
 	arr_day: {type: Number, required: true}, // day of flight
 	arr_month: {type: Number, required: true}, // month of flight
 	arr_year: {type: Number, required: true}, // year of flight
