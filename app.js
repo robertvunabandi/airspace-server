@@ -21,7 +21,11 @@ var mongoClient = require("mongodb").MongoClient;
   db.close();
 }); */
 
-var promise = mongoose.connect("mongodb://localhost:27017/RAWR", {
+const DB_LOCAL_URL = "mongodb://localhost:27017/RAWR";
+const DB_EXTERNAL_URL = `mongodb://rawr_db:rveIisZqYV@ds034807.mlab.com:34807/rawr_db`;
+// CONNECT IN SHELL: mongo ds034807.mlab.com:34807/rawr_db -u rawr_db -p rveIisZqYV
+
+var promise = mongoose.connect(DB_EXTERNAL_URL, {
 	useMongoClient: true
 });
 
