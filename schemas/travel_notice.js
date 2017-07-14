@@ -7,11 +7,11 @@ const TravelNotice = new Schema({
 	flight_num: {type: Number, required: true}, // ID on the key
 	item_types: {type: Array, required: false}, // Types of items from [envelopes, small box, large box, clothing items, and other]
 
-	envelopes: {type: Boolean, required: false},
-	smbox: {type: Boolean, required: false},
-	lgbox: {type: Boolean, required: false},
-	clothing: {type: Boolean, required: false},
-	other: {type: Boolean, required: false},
+	item_envelopes: {type: Boolean, required: false},
+	item_smbox: {type: Boolean, required: false},
+	item_lgbox: {type: Boolean, required: false},
+	item_clothing: {type: Boolean, required: false},
+	item_other: {type: Boolean, required: false},
 
 	item_other: {type: String, required: false}, // name of other item 
 	drop_off_flexibility: {type: String, required: false}, // flexibility of the user that's putting the travel noting
@@ -28,7 +28,7 @@ const TravelNotice = new Schema({
 	// Arrival: arr
 	arr_iata: {type: String, required: true}, // airport code
 	arr_city: {type: String, required: true}, // airport city
-	arr_time: {type: String, required: true} // time of flight, HH:MM
+	arr_time: {type: String, required: true}, // time of flight, HH:MM
 	arr_day: {type: Number, required: true}, // day of flight
 	arr_month: {type: Number, required: true}, // month of flight
 	arr_year: {type: Number, required: true}, // year of flight
