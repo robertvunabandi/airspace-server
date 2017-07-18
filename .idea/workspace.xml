@@ -33,11 +33,11 @@
       <file leaf-file-name="index.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/routes/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="206">
-              <caret line="132" column="45" lean-forward="false" selection-start-line="132" selection-start-column="45" selection-end-line="132" selection-end-column="45" />
+            <state relative-caret-position="236">
+              <caret line="188" column="53" lean-forward="false" selection-start-line="188" selection-start-column="53" selection-end-line="188" selection-end-column="53" />
               <folding>
                 <element signature="n#!!doc" expanded="true" />
-                <element signature="e#36318#36476#0" expanded="false" />
+                <element signature="e#36374#36532#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -59,6 +59,7 @@
     <findStrings>
       <find>user</find>
       <find>connection</find>
+      <find>LOG.</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -273,12 +274,12 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1500250503255</updated>
-      <workItem from="1500250506491" duration="16605000" />
+      <workItem from="1500250506491" duration="17123000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="16605000" />
+    <option name="totallyTimeSpent" value="17123000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -373,11 +374,11 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/routes/index.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="206">
-          <caret line="132" column="45" lean-forward="false" selection-start-line="132" selection-start-column="45" selection-end-line="132" selection-end-column="45" />
+        <state relative-caret-position="236">
+          <caret line="188" column="53" lean-forward="false" selection-start-line="188" selection-start-column="53" selection-end-line="188" selection-end-column="53" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
-            <element signature="e#36318#36476#0" expanded="false" />
+            <element signature="e#36374#36532#0" expanded="false" />
           </folding>
         </state>
       </provider>

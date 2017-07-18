@@ -79,20 +79,19 @@ function log_requested_items(request) {
 	for (let i = 0; i < Object.keys(request.query).length; i++){
 		query += `${Object.keys(request.query)[i]}:${request.query[Object.keys(request.query)[i]]}, \n`
 	}
-    LOG.d(`BODY\n${body}QUERY\n${query}URL\n${request.url}`);
+    console.log(`BODY\n${body}QUERY\n${query}URL\n${request.url}`);
     log_separator(1);
 }
 
 /* functions to get variables from requests safely */
 function sf_req(request, stringName, tag = null) {
     // stands for "save from request". Body is favored
-    // LOG.w(`${request.body[stringName]}, ${request.query[stringName]}`);
     let result = request.body[stringName] === undefined || request.body[stringName] === null ? request.query[stringName] : request.body[stringName];
     if (result === null || result === undefined) {
         let folder = tag === null ? "" : tag;
         // it seems like chalk is causing server to crash
         console.log(` ** * W/${folder}: Both query and result are null or undefined for ${stringName}`);
-    } // LOG.w(`RES - ${result}`);
+    }
     return result;
 }
 
@@ -186,7 +185,7 @@ router.post('/new_user', function (request, response, next) {
             // save the user if he doesn't exist, will be part of the block before this
             newUser.save(function (registration_error, user_saved) {
                 if (!registration_error) {
-                    LOG.d("REGISTRATION COMPLETE");
+                    // registration done successfully
                     callback(201, "success", user_saved, false);
                 } else {
                     console.log(`REGISTRATION ERROR`, registration_error);
@@ -399,7 +398,7 @@ router.get('/travels', function (request, response, next) {
         if (error_from) {
             callback(502, null, {message: "Bad Internal Server Error."});
         } else {
-	        LOG.i(body_from);
+	        console.log(body_from); // TODO - REM LOG
             airportsFrom = JSON.parse(body_from).airports; // this is an array
             performSearch();
         }
@@ -410,7 +409,7 @@ router.get('/travels', function (request, response, next) {
         if (error_to) {
             callback(502, null, {message: "Bad Internal Server Error."});
         } else {
-            LOG.i(body_to);
+            console.log(body_to); // TODO - REM LOG
             airportsTo = JSON.parse(body_to).airports; // this is an array
             REQUEST_HTTP(optionsFrom, callbackOnFrom);
         }
@@ -423,7 +422,6 @@ router.get('/travels', function (request, response, next) {
     function performSearch() {
         // find all the travel notices
         TravelNotice.find({}, function (error, search) {
-            LOG.d("\nInside of TRAVELNOTICE FIND, GOOD");
             if (error) {
                 // handle error, interval server or database error while calling to find travelNotices
                 callback(500, null, error);
@@ -438,6 +436,7 @@ router.get('/travels', function (request, response, next) {
     }
 
     function performSearchFinal(resultsFromSearch) {
+	    console.log("\nInside of performSearchFinal, GOOD"); //
         // TODO - FINISH THIS FUNCTION
         let RES = resultsFromSearch.slice(0); // copy the list of result
         let TEMP = [];
