@@ -606,6 +606,7 @@ router.post("/travel_notice_add", function (request, response, next) {
      THIS ASSUMES THAT VARIABLES GIVEN IN THE REQUEST ARE CORRECT
      testCall from terminal:
      curl -X POST http://localhost:3000/travel_notice_add?tuid=5967d57baf06e6606c442961&airline=AS&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_other=true&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=1&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=4
+     curl -X POST https://mysterious-headland-54722.herokuapp.com/travel_notice_add?tuid=5967d57baf06e6606c442961&airline=AS&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_other=true&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=1&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=4
      */
     // callback for when request is over
 	let callback = function (status, data, error) {
@@ -627,16 +628,13 @@ router.post("/travel_notice_add", function (request, response, next) {
         tuid: sf_req(request, "tuid", "travel_notice_add"),
         airline: sf_req(request, "airline", "travel_notice_add"),
         flight_num: sf_req(request, "flight_num", "travel_notice_add"),
-
         item_envelopes: sf_req_bool(request, "item_envelopes", "travel_notice_add"),
         item_smbox: sf_req_bool(request, "item_smbox", "travel_notice_add"),
         item_lgbox: sf_req_bool(request, "item_lgbox", "travel_notice_add"),
         item_clothing: sf_req_bool(request, "item_clothing", "travel_notice_add"),
         item_other: sf_req_bool(request, "item_other", "travel_notice_add"),
-
         drop_off_flexibility: sf_req(request, "drop_off_flexibility", "travel_notice_add"),
         pick_up_flexibility: sf_req(request, "pick_up_flexibility", "travel_notice_add"),
-
         dep_iata: sf_req(request, "dep_iata", "travel_notice_add"),
         dep_city: sf_req(request, "dep_city", "travel_notice_add"),
         dep_min: sf_req_int(request, "dep_min", "travel_notice_add"),
@@ -644,7 +642,6 @@ router.post("/travel_notice_add", function (request, response, next) {
         dep_day: sf_req_int(request, "dep_day", "travel_notice_add"),
         dep_month: sf_req_int(request, "dep_month", "travel_notice_add"),
         dep_year: sf_req_int(request, "dep_year", "travel_notice_add"),
-
         arr_iata: sf_req(request, "arr_iata", "travel_notice_add"),
         arr_city: sf_req(request, "arr_city", "travel_notice_add"),
         arr_min: sf_req_int(request, "arr_min", "travel_notice_add"),
@@ -658,13 +655,15 @@ router.post("/travel_notice_add", function (request, response, next) {
     // place this in the database
     travelNotice.save(function (saving_error, savedTravelNotice) {
         // this will throw an error if one of the required variables is not given.
-        if (!saving_error) {
-            // if there is no error, then saving was successful
-            console.log("Saving successful");
-            callback(201, savedTravelNotice, false);
+        if (saving_error) {
+            // in case of error, handle that
+	        callback(500, null, saving_error);
+        } else if (savedTravelNotice === null) {
+            // if savedTravelNotice is null, then an error occurred somewhere and this was not saved
+            callback(500, null, true);
         } else {
-            console.log(`Saving error occured`, saving_error);
-            callback(500, null, saving_error);
+	        // if savedTravelNotice is null, then send it
+	        callback(201, savedTravelNotice, false);
         }
     });
 });
