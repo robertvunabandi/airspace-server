@@ -607,9 +607,20 @@ router.post("/travel_notice_add", function (request, response, next) {
      testCall from terminal:
      curl -X POST http://localhost:3000/travel_notice_add?tuid=5967d57baf06e6606c442961&airline=AS&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_other=true&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=1&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=4
      */
-
-    // for debugging
-    log_requested_items(request);
+    // callback for when request is over
+	let callback = function (status, data, error) {
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status);
+		let server_response;
+		if (error) {
+			server_response = {success: false, data: null, error: error};
+		} else if (data === null) {
+			server_response = {success: false, data: null, error: false};
+		} else {
+			server_response = {success: true, data: data, error: false};
+		}
+		response.send(JSON.stringify(server_response));
+	};
 
     // get the variables from the request
     let travelNotice = new TravelNotice({
@@ -645,21 +656,15 @@ router.post("/travel_notice_add", function (request, response, next) {
     });
 
     // place this in the database
-    travelNotice.save(function (saving_error) {
-        let callback = function (message, status) {
-            response.setHeader('Content-Type', 'application/json');
-            response.status(status);
-            let server_response = status >= 400 ? {message: message, error: true} : {message: message, error: false};
-            response.send(JSON.stringify(server_response));
-        };
-
+    travelNotice.save(function (saving_error, savedTravelNotice) {
         // this will throw an error if one of the required variables is not given.
         if (!saving_error) {
+            // if there is no error, then saving was successful
             console.log("Saving successful");
-            callback("success", 201);
+            callback(201, savedTravelNotice, false);
         } else {
             console.log(`Saving error occured`, saving_error);
-            callback(saving_error, 500);
+            callback(500, null, saving_error);
         }
     });
 });
@@ -684,7 +689,7 @@ router.post("/travel_notice_update", function (request, response, next) {
             server_response = {success: true, data: data, error: false};
         }
         response.send(JSON.stringify(server_response));
-    }
+    };
 
     // set the updated travel notice
     let updatedTravelNotice = new TravelNotice({
@@ -720,13 +725,16 @@ router.post("/travel_notice_update", function (request, response, next) {
         // - Now for this, requests_ids should not be null!
     });
 
-    // find the specific travel notice to be updated
+    // find the specific travel notice to be updated, which is referred with BOTH _id and tuid
     TravelNotice.findOneAndUpdate({
         _id: request.query.travel_notice_uid,
         tuid: request.query.tuid
     }, updatedTravelNotice, function (error, data) {
         if (error) {
             callback(500, null, error);
+        } else if (data === null) {
+            // if the data is null, that means that travel notice didn't exist
+            callback(404, null, false);
         } else {
             // if we get the data, we send it to the user
             callback(202, data, false);
