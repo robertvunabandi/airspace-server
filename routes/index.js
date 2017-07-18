@@ -127,9 +127,10 @@ function checkNulity(element){
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* GET test */
+/* GET test
+ * curl -X GET http://localhost:3000/test
+ * */
 router.get('/test', function (request, response, next) {
-    // curl -X GET http://localhost:3000/test
     response.setHeader('Content-Type', 'application/json');
     response.send(JSON.stringify({numbers: [0, 1, 2, 3, 4, 5, 6], names: ["Ruben", "Amanda", "Robert"]}));
 });
@@ -462,15 +463,13 @@ router.get('/travels', function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* POST send or receive request */
+/* POST send or receive request
+* curl -X POST http://localhost:3000/request
+* curl -X POST http://localhost:3000/request?travel_notice_id=596a79585749ad1f3b77234b&ruid=5967d57baf06e6606c442961&item_envelopes=true&item_smbox=false&item_lgbox=false&item_clothing=false&item_other=false&item_total=1&sending=false&receiving=false
+* */
 router.post("/request", function (request, response, next) {
     /* send or receive request sent to a specific user from query
-     or body, in the DB, this creates a new request.
-     curl -X POST http://localhost:3000/request
-     curl -X POST http://localhost:3000/request?travel_notice_id=596a79585749ad1f3b77234b&ruid=5967d57baf06e6606c442961&item_envelopes=true&item_smbox=false&item_lgbox=false&item_clothing=false&item_other=false&item_total=1&sending=false&receiving=false
-     drop_off_flexibility=somecomments
-     pick_up_flexibility=somecomments
-     item_other_name=bottle */
+     or body, in the DB, this creates a new request. */
 
     // callback once we get the result
     let callback = function (status_, request_, travel_notice_, message_, error_) {
@@ -600,14 +599,13 @@ router.post("/request", function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* POST add a travel notice to the database */
+/* POST add a travel notice to the database
+* curl -X POST http://localhost:3000/travel_notice_add?tuid=5967d57baf06e6606c442961&airline=AS&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_other=true&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=1&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=4
+* curl -X POST https://mysterious-headland-54722.herokuapp.com/travel_notice_add?tuid=5967d57baf06e6606c442961&airline=AS&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_other=true&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=1&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=4
+* */
 router.post("/travel_notice_add", function (request, response, next) {
-    /*
-     THIS ASSUMES THAT VARIABLES GIVEN IN THE REQUEST ARE CORRECT
-     testCall from terminal:
-     curl -X POST http://localhost:3000/travel_notice_add?tuid=5967d57baf06e6606c442961&airline=AS&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_other=true&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=1&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=4
-     curl -X POST https://mysterious-headland-54722.herokuapp.com/travel_notice_add?tuid=5967d57baf06e6606c442961&airline=AS&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_other=true&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=1&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=4
-     */
+    // This assumes that variables got from request are correct
+
     // callback for when request is over
 	let callback = function (status, data, error) {
 		response.setHeader('Content-Type', 'application/json');
@@ -746,10 +744,11 @@ router.post("/travel_notice_update", function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+/* POST deletes a travel notice from the DB
+* curl -X POST http://localhost:3000/travel_notice_delete
+* curl -X POST http://localhost:3000/travel_notice_delete?tuid=5967d57baf06e6606c442961&travel_notice_uid=<PLACE HERE>
+* */
 router.post("/travel_notice_delete", function (request, response, next) {
-    /*
-     // Sample method
-     curl -X POST http://localhost:3000/travel_notice_delete?tuid=5967d57baf06e6606c442961&travel_notice_uid=<PLACE HERE> */
 
     // callback once we get the result
     let callback = function (status, data, error) {
@@ -788,8 +787,10 @@ router.post("/travel_notice_delete", function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+/* See all travel notices from the database
+* curl -X GET http://localhost:3000/travel_notice_all
+* */
 router.get("/travel_notice_all", function (request, response, next) {
-    // curl -X GET http://localhost:3000/travel_notice_all
 
     // callback when result is received
 	let callback = function (status, data, error) {
@@ -825,21 +826,13 @@ module.exports = router;
 
 /* ===================================================
  * 
- * AIPORT API:
- * Base URL:
- * Endpoint: 
- *
- * ================================================ */
-
-/* ===================================================
- * 
  * Heroku pushes:
  * 
  * git add <files>
  * git commit -m "messages"
  * git push origin master
  * 
- * git push heroku master # seems like it pushes from github
+ * git push heroku master # seems like it pushes from computer without needing git :-O
  * 
  * To run locally:
  * heroku local
