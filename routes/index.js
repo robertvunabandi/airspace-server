@@ -15,7 +15,7 @@
  * 
  * ================================================ */
 
-const chalk = require('chalk');
+// const chalk = require('chalk');
 
 const express = require('express');
 const router = express.Router();
@@ -36,7 +36,7 @@ const REQUEST_HTTP = require('request');
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* three debugging functions */
-const LOG = {
+/* const LOG = {
     d: function (message_logged) {
         // d for debug
         console.log(chalk.bold.rgb(0, 0, 0).bgWhite(` ${message_logged} `));
@@ -53,18 +53,18 @@ const LOG = {
         // e for error
         console.error(chalk.underline.rgb(255, 0, 0).bold(` ${message_logged} `));
     }
-};
+}; */
 
 function log_separator(count) {
     // for debugging purposes
     let sep = "* * * * * * * * * * * * * * * * * * * * * * * * ";
     if (count <= 1) {
-        LOG.d(sep);
+        console.log(sep);
     }
     else {
         let i = 0;
         while (i < count) {
-            LOG.d(sep);
+            console.log(sep);
             i++;
         }
     }
@@ -117,7 +117,7 @@ function sf_req_int(request, stringName, tag = null) {
     }
 }
 /* function to check nullity */
-function checkNulity(element){
+function isEmpty(element){
     // returns a boolean of whether this element is empty
     return element === null || element === undefined;
 }
@@ -141,19 +141,16 @@ router.get('/test', function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
-/* POST new user into database */
+/* POST new user into database
+* curl -X POST http://localhost:3000/new_user?f_name=dumb&l_name=dumb&email=dumb@dumb.dumb&dob=ddmmyy&description=dumb%20description&phone=1111111111
+* curl -X POST http://localhost:3000/new_user?f_name=dumb&l_name=dumb&email=dumb@dumb.dumb&dob=ddmmyy&description=dumbdescription&phone=1111111111
+* */
 router.post('/new_user', function (request, response, next) {
-    /*
-     testCall from terminal:
-     {f_name:"test",l_name:"test",email:"test@test.test",dob:"ddmmyy",description:"test description",phone:"1111111111"}
-     curl -X POST http://localhost:3000/new_user?f_name=dumb&l_name=dumb&email=dumb@dumb.dumb&dob=ddmmyy&description=dumb%20description&phone=1111111111
-     curl -X POST http://localhost:3000/new_user?f_name=dumb&l_name=dumb&email=dumb@dumb.dumb&dob=ddmmyy&description=dumbdescription&phone=1111111111
-     */
     // callback function to call at the end
     let callback = function(status_, message_, data_, error_) {
 	    response.setHeader('Content-Type', 'application/json');
         response.status(status_);
-        let server_response = {"NOPE":true};
+        let server_response;
         if (error_ !== false){
 	        server_response = {success: false, message:message_, data: null, error: error_};
         } else if (data_ === null) {
@@ -202,11 +199,10 @@ router.post('/new_user', function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* GET user id */
+/* GET returns the id of the user requested by email
+* curl -X GET http://localhost:3000/get_user?email=test@test.test
+* */
 router.get('/get_user', function (request, response, next) {
-    // returns the id of the user requested by email
-    // curl -X GET http://localhost:3000/get_user?email=test@test.test
-
     // callback once we get the result
     let callback = function (status_, user_, error_) {
         // callback for responding to send to user
@@ -227,7 +223,7 @@ router.get('/get_user', function (request, response, next) {
 	let email = sf_req(request, "email", "get_user");
 	let id = sf_req(request, "uid", "get_user");
 	// test if both are not given, if true send an error, otherwise fetch user from DB
-	if (checkNulity(email) && checkNulity(id)) {
+	if (isEmpty(email) && isEmpty(id)) {
 	    callback(405, null, "Either email or Id must be specified. None were.");
     } else {
 	    // we favor the email to the id
@@ -250,7 +246,7 @@ router.get('/get_user', function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* POST send message */
-router.get("/message", function (request, response, next) {
+router.post("/message", function (request, response, next) {
     // TODO - ENDPOINT /message INCOMPLETE, REMOVE 501 ON COMPLETION
     // message a user via chats
 
@@ -352,6 +348,7 @@ router.get('/travels', function (request, response, next) {
 
     // callback once we get the result
     let callback = function (status_, travelers_, error_) {
+        // TODO - Modify this callback to be more versatile
         // callback for responding to send to user
         response.setHeader('Content-Type', 'application/json');
         response.status(status_);
@@ -401,7 +398,11 @@ router.get('/travels', function (request, response, next) {
         } else {
 	        console.log(body_from); // TODO - REM LOG
             airportsFrom = JSON.parse(body_from).airports; // this is an array
-            performSearch();
+            if (isEmpty(airportsFrom) || isEmpty(airportsTo)) {
+                callback(404, null, "No traveler found.");
+            } else {
+	            performSearch();
+            }
         }
     };
     let callbackOnTo = function (error_to, response_to, body_to) {
@@ -416,8 +417,13 @@ router.get('/travels', function (request, response, next) {
         }
     };
 
-    // make the request for to
-    REQUEST_HTTP(optionsTo, callbackOnTo);
+    if (isEmpty(fromQuery) || isEmpty(toQuery) || isEmpty(dayBy) || isEmpty(monthBy) || isEmpty(yearBy)) {
+        // TODO - make json object holding these parameters and send it back
+        callback(403, null, `Some or all of parameters were not specified. All parameters are required. Given: from: ${fromQuery}, to: ${toQuery}, dayBy: ${dayBy}, monthBy: ${monthBy}, yearBy: ${yearBy}.`);
+    } else {
+	    // make the request for to
+	    REQUEST_HTTP(optionsTo, callbackOnTo);
+    }
 
     // performing search from airports to and from
     function performSearch() {
@@ -675,6 +681,7 @@ router.post("/travel_notice_update", function (request, response, next) {
 
     // callback once we get the result
     let callback = function (status, data, error) {
+        // TODO - modify to add messages
         response.setHeader('Content-Type', 'application/json');
         response.status(status);
         let server_response;
@@ -752,6 +759,7 @@ router.post("/travel_notice_delete", function (request, response, next) {
 
     // callback once we get the result
     let callback = function (status, data, error) {
+	    // TODO - modify to add messages
         response.setHeader('Content-Type', 'application/json');
         response.status(status);
         let server_response;
@@ -794,6 +802,7 @@ router.get("/travel_notice_all", function (request, response, next) {
 
     // callback when result is received
 	let callback = function (status, data, error) {
+		// TODO - modify to add messages
 		response.setHeader('Content-Type', 'application/json');
 		response.status(status);
 		let server_response;
@@ -815,6 +824,10 @@ router.get("/travel_notice_all", function (request, response, next) {
             callback(200, search, false);
         }
     });
+});
+
+router.get("/test_2", function (request, response, next) {
+    response.status(410).send("Gone!!!");
 });
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
