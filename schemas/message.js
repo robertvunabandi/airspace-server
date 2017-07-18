@@ -8,7 +8,6 @@ const Message = new Schema({
 	time: {type: Number, required: true} // this is the time the message was sent in ms from 1900 (used with Date)
 });
 
-
 module.exports = mongoose.model('Message', Message, "COLLECTIONAMETOFIND");
 
 /*

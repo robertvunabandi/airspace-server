@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const passportLocalMongoose = require('passport-local-mongoose'); // for passwords
 
 const User = new Schema({
 	// User id's is automatically generated
@@ -9,13 +8,10 @@ const User = new Schema({
 	email: {type: String, required: true},
 	dob: {type: String, required: true}, // MM-DD-YYYY, String
 	description: {type: String, required: false},
-	phone: {type: String, required: true}
+	phone: {type: String, required: true},
+	travel_notices_ids: {type:Array, required: false},
+	requests_ids: {type:Array, required: false}
 });
-
-
-
-// for passport saving passwords and hashing them
-User.plugin(passportLocalMongoose); 
 
 module.exports = mongoose.model('User', User, "users");
 
