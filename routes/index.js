@@ -2,7 +2,7 @@
  * SHIPPING APP DATABASE
  * 
  * Link:
- * https://mysterious-headland-54722.herokuapp.com/ 
+ * https://mysterious-headland-54722.herokuapp.com/travel_notice_all
  *
  * Good link for Mongo Stuffs:
  * https://scotch.io/tutorials/using-mongoosejs-in-node-js-and-mongodb-applications
@@ -90,7 +90,8 @@ function sf_req(request, stringName, tag = null) {
     let result = request.body[stringName] === undefined || request.body[stringName] === null ? request.query[stringName] : request.body[stringName];
     if (result === null || result === undefined) {
         let folder = tag === null ? "" : tag;
-        LOG.w(` ** * W/${folder}: Both query and result are null or undefined for ${stringName}`);
+        // it seems like chalk is causing server to crash
+        console.log(` ** * W/${folder}: Both query and result are null or undefined for ${stringName}`);
     } // LOG.w(`RES - ${result}`);
     return result;
 }
@@ -101,7 +102,7 @@ function sf_req_bool(request, stringName, tag = null) {
     else if (typeof(res) === "boolean") return res;
     else {
         let folder = tag === null ? "" : tag;
-        LOG.w(` ** * W/${folder}: type of "${stringName}" is neither boolean nor string.`);
+        console.log(` ** * W/${folder}: type of "${stringName}" is neither boolean nor string.`);
         return res;
     }
 }
@@ -110,7 +111,7 @@ function sf_req_int(request, stringName, tag = null) {
     let folder = tag === null ? "" : tag;
     let res = sf_req(request, stringName, tag);
     if (isNaN(res)) {
-        LOG.w(` ** * W/${folder}[${stringName}]: received NaN. Will return 0. This may cause errors.`);
+        console.log(` ** * W/${folder}[${stringName}]: received NaN. Will return 0. This may cause errors.`);
         return 0;
     } else {
         return parseInt(res);
@@ -130,8 +131,6 @@ function checkNulity(element){
 /* GET test */
 router.get('/test', function (request, response, next) {
     // curl -X GET http://localhost:3000/test
-    let testVar = sf_req(request, "noexistant", "test");
-    LOG.d("TEST"); LOG.i("TEST"); LOG.w("TEST"); LOG.e("TEST");
     response.setHeader('Content-Type', 'application/json');
     response.send(JSON.stringify({numbers: [0, 1, 2, 3, 4, 5, 6], names: ["Ruben", "Amanda", "Robert"]}));
 });
@@ -430,14 +429,32 @@ router.get('/travels', function (request, response, next) {
                 callback(500, null, error);
             } else if (search) {
                 // Filter the list for elements that matched the search
-                // get the list of airports, list of to and from
-                // TODO - Perform the search here, maybe write a function to do it
-                callback(501, null, "Error keeps occurring"); // JUST FOR NOW
+                performSearchFinal(search);
             } else {
                 // return null if there was no search found
                 callback(200, null, false);
             }
         });
+    }
+
+    function performSearchFinal(resultsFromSearch) {
+        // TODO - FINISH THIS FUNCTION
+        let RES = resultsFromSearch.slice(0); // copy the list of result
+        let TEMP = [];
+        // get matches from Airports From
+        // - get the list of from airports
+        let IATA_FROM = [];
+        for (let i = 0; i < airportsFrom.length; i++){
+            IATA_FROM.push(airportsFrom["iata"]);
+        }
+        // - see if any of those matches the resulting search
+        for (let i = 0; i < RES.length; i++){
+            if (RES[i].dep_iata in IATA_FROM) {
+                TEMP.push(RES[i]);
+            }
+        }
+        // get matches from Airports to in the matches from
+	    callback(501, null, "Error keeps occurring"); // JUST FOR NOW
     }
 });
 
