@@ -9,13 +9,18 @@
  * 
  * Mongo kill all call:
  * sudo killall -15 mongod
+ *
+ * https://stackoverflow.com/questions/21305049/heroku-how-can-you-check-heroku-error-logs
+ * Check heroku logs: heroku logs
+ * Check heroku logs in real time: heroku logs -t
  * 
  * Sending requests from terminal:
  * https://stackoverflow.com/questions/7172784/how-to-post-json-data-with-curl-from-terminal-commandline-to-test-spring-rest
  * 
  * ================================================ */
 
-// const chalk = require('chalk');
+// chalk for logging stuffs with colors
+const chalk = require('chalk');
 
 const express = require('express');
 const router = express.Router();
@@ -36,7 +41,7 @@ const REQUEST_HTTP = require('request');
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* three debugging functions */
-/* const LOG = {
+const LOG = {
     d: function (message_logged) {
         // d for debug
         console.log(chalk.bold.rgb(0, 0, 0).bgWhite(` ${message_logged} `));
@@ -53,7 +58,7 @@ const REQUEST_HTTP = require('request');
         // e for error
         console.error(chalk.underline.rgb(255, 0, 0).bold(` ${message_logged} `));
     }
-}; */
+};
 
 function log_separator(count) {
     // for debugging purposes
@@ -94,7 +99,7 @@ function sf_req(request, stringName, tag = null) {
     }
     return result;
 }
-
+/* functions to get booleans from requests safely */
 function sf_req_bool(request, stringName, tag = null) {
     let res = sf_req(request, stringName, tag);
     if (typeof(res) === "string") return res === "true";
@@ -105,7 +110,7 @@ function sf_req_bool(request, stringName, tag = null) {
         return res;
     }
 }
-
+/* functions to get integers from requests safely */
 function sf_req_int(request, stringName, tag = null) {
     let folder = tag === null ? "" : tag;
     let res = sf_req(request, stringName, tag);
@@ -116,7 +121,7 @@ function sf_req_int(request, stringName, tag = null) {
         return parseInt(res);
     }
 }
-/* function to check nullity */
+/* function to check nullity, checks if something is null or empty */
 function isEmpty(element){
     // returns a boolean of whether this element is empty
     return element === null || element === undefined;
@@ -627,6 +632,8 @@ router.post("/travel_notice_add", function (request, response, next) {
 		response.send(JSON.stringify(server_response));
 	};
 
+	let dropFlex = sf_req(request, "drop_off_flexibility", "travel_notice_add");
+	let pickFlex = sf_req(request, "pick_up_flexibility", "travel_notice_add");
     // get the variables from the request
     let travelNotice = new TravelNotice({
         tuid: sf_req(request, "tuid", "travel_notice_add"),
@@ -637,8 +644,8 @@ router.post("/travel_notice_add", function (request, response, next) {
         item_lgbox: sf_req_bool(request, "item_lgbox", "travel_notice_add"),
         item_clothing: sf_req_bool(request, "item_clothing", "travel_notice_add"),
         item_other: sf_req_bool(request, "item_other", "travel_notice_add"),
-        drop_off_flexibility: sf_req(request, "drop_off_flexibility", "travel_notice_add"),
-        pick_up_flexibility: sf_req(request, "pick_up_flexibility", "travel_notice_add"),
+        drop_off_flexibility: isEmpty(dropFlex) ? "" : dropFlex,
+        pick_up_flexibility: isEmpty(pickFlex) ? "" : pickFlex,
         dep_iata: sf_req(request, "dep_iata", "travel_notice_add"),
         dep_city: sf_req(request, "dep_city", "travel_notice_add"),
         dep_min: sf_req_int(request, "dep_min", "travel_notice_add"),
@@ -652,8 +659,8 @@ router.post("/travel_notice_add", function (request, response, next) {
         arr_hour: sf_req_int(request, "arr_hour", "travel_notice_add"),
         arr_day: sf_req_int(request, "arr_day", "travel_notice_add"),
         arr_month: sf_req_int(request, "arr_month", "travel_notice_add"),
-        arr_year: sf_req_int(request, "arr_year", "travel_notice_add")
-        // requests_ids: should be null since this is a new travel notice
+        arr_year: sf_req_int(request, "arr_year", "travel_notice_add"),
+        requests_ids: [] // this should be null (or an empty array) since it's a fresh new travel_notice
     });
 
     // place this in the database
@@ -725,8 +732,7 @@ router.post("/travel_notice_update", function (request, response, next) {
         arr_day: sf_req_int(request, "arr_day", "travel_notice_update"),
         arr_month: sf_req_int(request, "arr_month", "travel_notice_update"),
         arr_year: sf_req_int(request, "arr_year", "travel_notice_update"),
-        requests_ids: sf_req(request, "requests_ids", "travel_notice_update")
-        // - Now for this, requests_ids should not be null!
+        requests_ids: sf_req(request, "requests_ids", "travel_notice_update") // requests_ids should not be null!
     });
 
     // find the specific travel notice to be updated, which is referred with BOTH _id and tuid

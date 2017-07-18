@@ -6,11 +6,11 @@ const TravelNotice = new Schema({
 	airline: {type: String, required: true}, // ID on the key
 	flight_num: {type: Number, required: true}, // ID on the key
 
-	item_envelopes: {type: Boolean, required: false},
-	item_smbox: {type: Boolean, required: false},
-	item_lgbox: {type: Boolean, required: false},
-	item_clothing: {type: Boolean, required: false},
-	item_other: {type: Boolean, required: false},
+	item_envelopes: {type: Boolean, required: true},
+	item_smbox: {type: Boolean, required: true},
+	item_lgbox: {type: Boolean, required: true},
+	item_clothing: {type: Boolean, required: true},
+	item_other: {type: Boolean, required: true},
 
 	drop_off_flexibility: {type: String, required: false}, // flexibility of the user that's putting the travel noting
 	pick_up_flexibility: {type: String, required: false}, // flexibility of the user that's putting the travel noting
@@ -33,7 +33,7 @@ const TravelNotice = new Schema({
 	arr_month: {type: Number, required: true}, // month of flight
 	arr_year: {type: Number, required: true}, // year of flight
 
-	requests_ids: {type: Array, required: false}
+	requests_ids: {type: Array, required: true}
 });
 
 
