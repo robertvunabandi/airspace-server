@@ -5,13 +5,11 @@ const TravelNotice = new Schema({
 	tuid: {type: String, required: true}, // id of the user that puts out the travel notice
 	airline: {type: String, required: true}, // ID on the key
 	flight_num: {type: Number, required: true}, // ID on the key
-
 	item_envelopes: {type: Boolean, required: true},
 	item_smbox: {type: Boolean, required: true},
 	item_lgbox: {type: Boolean, required: true},
 	item_clothing: {type: Boolean, required: true},
 	item_other: {type: Boolean, required: true},
-
 	drop_off_flexibility: {type: String, required: false}, // flexibility of the user that's putting the travel noting
 	pick_up_flexibility: {type: String, required: false}, // flexibility of the user that's putting the travel noting
 
@@ -23,7 +21,6 @@ const TravelNotice = new Schema({
 	dep_day: {type: Number, required: true}, // day of flight
 	dep_month: {type: Number, required: true}, // month of flight
 	dep_year: {type: Number, required: true}, // year of flight
-	
 	// Arrival: arr
 	arr_iata: {type: String, required: true}, // airport code
 	arr_city: {type: String, required: true}, // airport city
@@ -33,7 +30,7 @@ const TravelNotice = new Schema({
 	arr_month: {type: Number, required: true}, // month of flight
 	arr_year: {type: Number, required: true}, // year of flight
 
-	requests_ids: {type: Array, required: true}
+	requests_ids: {type: Array, required: false}
 });
 
 

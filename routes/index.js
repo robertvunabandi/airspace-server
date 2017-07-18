@@ -106,8 +106,8 @@ function sf_req_bool(request, stringName, tag = null) {
     else if (typeof(res) === "boolean") return res;
     else {
         let folder = tag === null ? "" : tag;
-        console.log(` ** * W/${folder}: type of "${stringName}" is neither boolean nor string.`);
-        return res;
+        console.log(` ** * W/${folder}: type of "${stringName}" is neither boolean nor string. Default set to false. This may cause errors.`);
+        return false;
     }
 }
 /* functions to get integers from requests safely */
@@ -660,7 +660,7 @@ router.post("/travel_notice_add", function (request, response, next) {
         arr_day: sf_req_int(request, "arr_day", "travel_notice_add"),
         arr_month: sf_req_int(request, "arr_month", "travel_notice_add"),
         arr_year: sf_req_int(request, "arr_year", "travel_notice_add"),
-        requests_ids: [] // this should be null (or an empty array) since it's a fresh new travel_notice
+	    requests_ids: [] // this should be null (or an empty array) since it's a fresh new travel_notice
     });
 
     // place this in the database
