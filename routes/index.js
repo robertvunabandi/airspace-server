@@ -752,6 +752,58 @@ router.post("/travel_notice_update", function (request, response, next) {
     });
 });
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* POST gets a travel notice from the DB
+ * curl -X POST http://localhost:3000/travel_notice_get
+ *
+ * */
+
+router.post("/travel_notice_get", function(request, response, next) {
+	// callback once we get the result
+	let callback = function (status_, travel_notice_, message_, error_) {
+		// callback for responding to send to user
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_) {
+			server_response = {success: false, data: null, message: message_, error: error_};
+		} else if (travel_notice_ === null) {
+			// if we get to here that means travel_notice_ is not empty
+			server_response = {success: false, data: null, message: message_, error: false};
+		} else {
+			server_response = {success: true, data: travel_notice_, message: message_, error: false};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+
+	let travelNoticeId = sf_req(request, "travel_notice_id", "travel_notice_get");
+	let tuid = sf_req(request, "tuid", "travel_notice_get");
+
+	if (isEmpty(travelNoticeId) || isEmpty(tuid)) {
+	    callback(403, null, "Some of the parameters were not given", true);
+    } else {
+		// perform the search
+		TravelNotice.findOne({
+			_id: travelNoticeId,
+			tuid: tuid
+		}, function (error, data) {
+			if (error) {
+				callback(500, null, "Internal Server Error", error);
+			} else if (data === null) {
+				// if the data is null, that means that travel notice didn't exist
+				callback(404, null, "Travel Notice not found", false);
+			} else {
+				// if we get the data, we send it to the user
+				callback(200, data, "Successful", false);
+			}
+		});
+    }
+});
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
@@ -761,7 +813,7 @@ router.post("/travel_notice_update", function (request, response, next) {
 * curl -X POST http://localhost:3000/travel_notice_delete
 * curl -X POST http://localhost:3000/travel_notice_delete?tuid=5967d57baf06e6606c442961&travel_notice_uid=<PLACE HERE>
 * */
-router.post("/travel_notice_delete", function (request, response, next) {
+router.post("/travel_notice_delete", function(request, response, next) {
 
     // callback once we get the result
     let callback = function (status, data, error) {
