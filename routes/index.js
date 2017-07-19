@@ -762,7 +762,7 @@ router.post("/travel_notice_update", function (request, response, next) {
  *
  * */
 
-router.post("/travel_notice_get", function(request, response, next) {
+router.get("/travel_notice_get", function(request, response, next) {
 	// callback once we get the result
 	let callback = function (status_, travel_notice_, message_, error_) {
 		// callback for responding to send to user
