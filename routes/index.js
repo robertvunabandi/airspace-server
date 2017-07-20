@@ -150,7 +150,7 @@ router.get('/test', function (request, response, next) {
  * curl -X POST http://localhost:3000/new_user?f_name=dumb&l_name=dumb&email=dumb@dumb.dumb&dob=ddmmyy&description=dumb%20description&phone=1111111111
  * curl -X POST http://localhost:3000/new_user?f_name=dumb&l_name=dumb&email=dumb@dumb.dumb&dob=ddmmyy&description=dumbdescription&phone=1111111111
  * */
-router.post('/new_user', function (request, response, next) {
+router.post('/user_add', function (request, response, next) {
 	// callback function to call at the end
 	let callback = function (status_, message_, data_, error_) {
 		response.setHeader('Content-Type', 'application/json');
@@ -171,9 +171,10 @@ router.post('/new_user', function (request, response, next) {
 		f_name: sf_req(request, "f_name", "new_user"),
 		l_name: sf_req(request, "l_name", "new_user"),
 		email: sf_req(request, "email", "new_user"),
-		dob: sf_req(request, "dob", "new_user"),
-		description: sf_req(request, "description", "new_user"),
-		phone: sf_req(request, "phone", "new_user")
+		location: "the best place on earth",
+		favorite_travel_place: "wherever has the cheapest flights",
+		suitcase_color: "rainbow"
+		// missing here: dob, phone, travel_notices_ids, requests_ids
 	});
 	/* check if user exists in database just by email first,
 	 if yes, send an error that user exists, if no, save that user */
@@ -207,7 +208,7 @@ router.post('/new_user', function (request, response, next) {
 /* GET returns the id of the user requested by email
  * curl -X GET http://localhost:3000/get_user?email=test@test.test
  * */
-router.get('/get_user', function (request, response, next) {
+router.get('/user_get', function (request, response, next) {
 	// callback once we get the result
 	let callback = function (status_, user_, error_) {
 		// callback for responding to send to user
@@ -243,6 +244,92 @@ router.get('/get_user', function (request, response, next) {
 			}
 		});
 	}
+});
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+router.get('/user_update', function (request, response, next) {
+	// callback for responding when done
+	let callback = function (status_, data_, message_, error_) {
+
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_) {
+			server_response = {success: false, data: null, message: message_, error: error_};
+		} else if (data_ === null) {
+			// if we get to here that means travel_notice_ is not empty
+			server_response = {success: false, data: null, message: message_, error: false};
+		} else {
+			server_response = {success: true, data: data_, message: message_, error: false};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+
+	// since people sign up or in just with emails, emails are not allowed to change
+	let _id = sf_req(request, "uid", "user_update");
+	let _email = sf_req(request, "email", "user_update");
+
+	// get changing parameters from the request, f_name and l_name
+	let _dob = sf_req(request, "dob", "user_update");
+	let _location = sf_req(request, "location", "user_update");
+	let _favorite_travel_place = sf_req(request, "favorite_travel_place", "user_update");
+	let _suitcase_color = sf_req(request, "suitcase_color", "user_update");
+	let _phone = sf_req(request, "phone", "user_update");
+	let _travel_notices_ids = sf_req(request, "travel_notices_ids", "user_update");
+	let _requests_ids = sf_req(request, "requests_ids", "user_update");
+
+	User.findOne({_id:_id, email:_email}, function (findingError, foundUser) {
+		if (findingError) {
+			callback(500, null, "Internal Server Error", findingError);
+		} else {
+			if (!isEmpty(_dob)) foundUser.dob = _dob;
+			if (!isEmpty(_location)) foundUser.location = _location;
+			if (!isEmpty(_favorite_travel_place)) foundUser.favorite_travel_place = _favorite_travel_place;
+			if (!isEmpty(_suitcase_color)) foundUser.suitcase_color = _suitcase_color;
+			if (!isEmpty(_phone)) foundUser.phone = _phone;
+			if (!isEmpty(_travel_notices_ids)) foundUser.travel_notices_ids = _travel_notices_ids;
+			if (!isEmpty(_requests_ids)) foundUser.requests_ids = _requests_ids;
+
+			foundUser.save(function(savingError, savedUser) {
+				if (savingError) {
+					callback(500, null, "Internal Server Error", savingError);
+				} else if (isEmpty(savedUser)) {
+					callback(500, null, "Internal Server Error Unknown. Saved user was empty.", true);
+				} else {
+					callback(202, savedUser, "User updated successfully", false);
+				}
+			});
+		}
+	});
+});
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+router.get('/user_delete', function (request, response, next) {
+	// callback for responding when done
+	let callback = function (status_, data_, message_, error_) {
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_) {
+			server_response = {success: false, data: null, message: message_, error: error_};
+		} else if (data_ === null) {
+			// if we get to here that means travel_notice_ is not empty
+			server_response = {success: false, data: null, message: message_, error: false};
+		} else {
+			server_response = {success: true, data: data_, message: message_, error: false};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+
+	callback(501, null, "Not yet implemented", true);
 });
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
@@ -453,10 +540,10 @@ router.get('/travels', function (request, response, next) {
 		let RES = resultsFromSearch.slice(0); // copy the list of result
 		let TEMP = [];
 		// get matches from Airports From
-		// - get the list of from airports
+		// - get the list of from airports iata
 		let IATA_FROM = [];
 		for (let i = 0; i < airportsFrom.length; i++) {
-			IATA_FROM.push(airportsFrom["iata"]);
+			IATA_FROM.push(airportsFrom[i]["iata"]);
 		}
 		// - see if any of those matches the resulting search
 		for (let i = 0; i < RES.length; i++) {
@@ -464,8 +551,32 @@ router.get('/travels', function (request, response, next) {
 				TEMP.push(RES[i]);
 			}
 		}
+
 		// get matches from Airports to in the matches from
-		callback(501, null, "Error keeps occurring"); // JUST FOR NOW
+		// - get the list of from airports iata
+		let IATA_TO = [];
+		for (let i = 0; i < airportsTo.length; i++) {
+			IATA_TO.push(airportsTo[i]["iata"]);
+		}
+		RES = [];
+		// - see if any of those matches the resulting search
+		for (let i = 0; i < RES.length; i++) {
+			if (TEMP[i].arr_iata in IATA_TO) {
+				RES.push(TEMP[i]);
+			}
+		}
+
+		// now match by the time
+		LOG.i(IATA_FROM);
+		LOG.i(IATA_TO);
+		LOG.i(RES);
+		// if res is empty here, we make a 404 callback
+		if (RES.length <= 0) {
+			callback(404, null, "No travel notice found"); // JUST FOR NOW
+		} else {
+			// TODO - find by dates now on what we have in RES
+			callback(501, null, "Error keeps occurring"); // JUST FOR NOW
+		}
 	}
 });
 
@@ -478,7 +589,7 @@ router.get('/travels', function (request, response, next) {
  * curl -X POST http://localhost:3000/request
  * curl -X POST http://localhost:3000/request?travel_notice_id=596a79585749ad1f3b77234b&ruid=5967d57baf06e6606c442961&item_envelopes=true&item_smbox=false&item_lgbox=false&item_clothing=false&item_other=false&item_total=1&sending=false&receiving=false
  * */
-router.post("/request", function (request, response, next) {
+router.post("/request_send", function (request, response, next) {
 	/* send or receive request sent to a specific user from query
 	 or body, in the DB, this creates a new request. */
 
@@ -521,17 +632,20 @@ router.post("/request", function (request, response, next) {
 		ruid: sf_req(request, "ruid", "request"), // we assume the requester exists in DB
 		sending: sendingBool, // is this person sending it
 		receiving: receivingBool, // is this person receiving it
+		declined: false,
+		accepted: false,
 		item_envelopes: sf_req_bool(request, "item_envelopes", "request"),
 		item_smbox: sf_req_bool(request, "item_smbox", "request"),
 		item_lgbox: sf_req_bool(request, "item_lgbox", "request"),
 		item_clothing: sf_req_bool(request, "item_clothing", "request"),
+		item_fragile: sf_req_bool(request, "item_fragile", "request"),
+		item_liquid: sf_req_bool(request, "item_liquid", "request"),
 		item_other: itemOther,
 		item_other_name: itemOtherName,
 		item_total: requestedCount,
 		drop_off_flexibility: sf_req(request, "drop_off_flexibility", "request"),
 		pick_up_flexibility: sf_req(request, "pick_up_flexibility", "request")
 	});
-	console.log("\n");
 
 	// we need to have at least 1 item requested so throw an error
 	if (requestedCount < 1 || isNaN(requestedCount)) {
@@ -559,6 +673,7 @@ router.post("/request", function (request, response, next) {
 								request_id: request_saved._id.valueOf()
 							};
 							try {
+								// the array be not be initialized so we do a try catch. However, it should be!
 								tn.requests_ids.push(rs_add);
 								tn.save();
 								callback(201, request_saved, tn, "Saved successfully", false);
@@ -569,7 +684,6 @@ router.post("/request", function (request, response, next) {
 								tn.save();
 								callback(201, request_saved, tn, "Saved successfully", false);
 							}
-
 						} else {
 							console.log(`\n\n\n * * * ** Saving error occured\n\n\n`, saving_error);
 							callback(500, null, null, saving_error, true);
@@ -611,8 +725,8 @@ router.post("/request", function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* POST add a travel notice to the database
- * curl -X POST http://localhost:3000/travel_notice_add?tuid=5967d57baf06e6606c442961&airline=AS&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_other=true&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=1&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=4
- * curl -X POST https://mysterious-headland-54722.herokuapp.com/travel_notice_add?tuid=5967d57baf06e6606c442961&airline=AS&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_other=true&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=1&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=4
+ * curl -X POST http://localhost:3000/travel_notice_add?tuid=5967d57baf06e6606c442961&airline_iata=AA&airline_name=AmericanAirline&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_fragile=true&item_liquid=true&item_other=true&dep_airport_name=departurebrooooo&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=2001&arr_airport_name=THISISSOAIRPORTY&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=2499
+ * curl -X POST https://mysterious-headland-54722.herokuapp.com/travel_notice_add?tuid=5967d57baf06e6606c442961&airline_iata=AA&airline_name=AmericanAirline&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_fragile=true&item_liquid=true&item_other=true&dep_airport_name=LOLDEPARTUREOTHEONE&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=1&arr_airport_name=LOLARRIVALOTHERONE&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=4
  * */
 router.post("/travel_notice_add", function (request, response, next) {
 	// This assumes that variables got from request are correct
@@ -637,15 +751,19 @@ router.post("/travel_notice_add", function (request, response, next) {
 	// get the variables from the request
 	let travelNotice = new TravelNotice({
 		tuid: sf_req(request, "tuid", "travel_notice_add"),
-		airline: sf_req(request, "airline", "travel_notice_add"),
+		airline_iata: sf_req(request, "airline_iata", "travel_notice_add"),
+		airline_name: sf_req(request, "airline_name", "travel_notice_add"),
 		flight_num: sf_req(request, "flight_num", "travel_notice_add"),
 		item_envelopes: sf_req_bool(request, "item_envelopes", "travel_notice_add"),
 		item_smbox: sf_req_bool(request, "item_smbox", "travel_notice_add"),
 		item_lgbox: sf_req_bool(request, "item_lgbox", "travel_notice_add"),
 		item_clothing: sf_req_bool(request, "item_clothing", "travel_notice_add"),
+		item_fragile: sf_req_bool(request, "item_fragile", "travel_notice_add"),
+		item_liquid: sf_req_bool(request, "item_liquid", "travel_notice_add"),
 		item_other: sf_req_bool(request, "item_other", "travel_notice_add"),
 		drop_off_flexibility: isEmpty(dropFlex) ? "" : dropFlex,
 		pick_up_flexibility: isEmpty(pickFlex) ? "" : pickFlex,
+		dep_airport_name: sf_req(request, "dep_airport_name", "travel_notice_add"),
 		dep_iata: sf_req(request, "dep_iata", "travel_notice_add"),
 		dep_city: sf_req(request, "dep_city", "travel_notice_add"),
 		dep_min: sf_req_int(request, "dep_min", "travel_notice_add"),
@@ -653,6 +771,7 @@ router.post("/travel_notice_add", function (request, response, next) {
 		dep_day: sf_req_int(request, "dep_day", "travel_notice_add"),
 		dep_month: sf_req_int(request, "dep_month", "travel_notice_add"),
 		dep_year: sf_req_int(request, "dep_year", "travel_notice_add"),
+		arr_airport_name: sf_req(request, "arr_airport_name", "travel_notice_add"),
 		arr_iata: sf_req(request, "arr_iata", "travel_notice_add"),
 		arr_city: sf_req(request, "arr_city", "travel_notice_add"),
 		arr_min: sf_req_int(request, "arr_min", "travel_notice_add"),
@@ -712,6 +831,8 @@ router.post("/travel_notice_update", function (request, response, next) {
 	let Ritem_smbox = sf_req(request, "item_smbox", "travel_notice_add");
 	let Ritem_lgbox = sf_req(request, "item_lgbox", "travel_notice_add");
 	let Ritem_clothing = sf_req(request, "item_clothing", "travel_notice_add");
+	let Ritem_fragile = sf_req(request, "item_fragile", "travel_notice_add");
+	let Ritem_liquid = sf_req(request, "item_liquid", "travel_notice_add");
 	let Ritem_other = sf_req(request, "item_other", "travel_notice_add");
 	let Rdrop_off_flexibility = sf_req(request, "drop_off_flexibility", "travel_notice_update");
 	let Rpick_up_flexibility = sf_req(request, "pick_up_flexibility", "travel_notice_update");
@@ -727,11 +848,13 @@ router.post("/travel_notice_update", function (request, response, next) {
 		} else {
 			// if we get the data, we update it then send it to user
 			// update stuffs if they are not empty
-			if (!isEmpty(Ritem_envelopes)) foundTravelNotice.item_envelopes = sf_req(request, "flight_num", "travel_notice_update");
-			if (!isEmpty(Ritem_smbox)) foundTravelNotice.item_smbox = sf_req_bool(request, "item_envelopes", "travel_notice_add");
-			if (!isEmpty(Ritem_lgbox)) foundTravelNotice.item_lgbox = sf_req_bool(request, "item_smbox", "travel_notice_add");
-			if (!isEmpty(Ritem_clothing)) foundTravelNotice.item_clothing = sf_req_bool(request, "item_lgbox", "travel_notice_add");
-			if (!isEmpty(Ritem_other)) foundTravelNotice.item_other = sf_req_bool(request, "item_clothing", "travel_notice_add");
+			if (!isEmpty(Ritem_envelopes)) foundTravelNotice.item_envelopes = sf_req(request, "item_envelopes", "travel_notice_update");
+			if (!isEmpty(Ritem_smbox)) foundTravelNotice.item_smbox = sf_req_bool(request, "item_smbox", "travel_notice_add");
+			if (!isEmpty(Ritem_lgbox)) foundTravelNotice.item_lgbox = sf_req_bool(request, "item_lgbox", "travel_notice_add");
+			if (!isEmpty(Ritem_clothing)) foundTravelNotice.item_clothing = sf_req_bool(request, "item_clothing", "travel_notice_add");
+			if (!isEmpty(Ritem_fragile)) foundTravelNotice.item_fragile = sf_req_bool(request, "item_fragile", "travel_notice_add");
+			if (!isEmpty(Ritem_liquid)) foundTravelNotice.item_liquid = sf_req_bool(request, "item_liquid", "travel_notice_add");
+			if (!isEmpty(Ritem_other)) foundTravelNotice.item_other = sf_req_bool(request, "item_other", "travel_notice_add");
 			if (!isEmpty(Rdrop_off_flexibility)) foundTravelNotice.pick_up_flexibility = Rdrop_off_flexibility;
 			if (!isEmpty(Rpick_up_flexibility)) foundTravelNotice.pick_up_flexibility = Rpick_up_flexibility;
 			if (!isEmpty(Rrequests)) foundTravelNotice.requests_ids = Rrequests;
@@ -855,7 +978,6 @@ router.post("/travel_notice_delete", function (request, response, next) {
  * curl -X GET http://localhost:3000/travel_notice_all
  * */
 router.get("/travel_notice_all", function (request, response, next) {
-
 	// callback when result is received
 	let callback = function (status, data, error) {
 		// TODO - modify to add messages
@@ -870,6 +992,7 @@ router.get("/travel_notice_all", function (request, response, next) {
 		}
 		response.send(JSON.stringify(server_response));
 	};
+
 	// returns a list of all the travel notices currently saved in the database
 	TravelNotice.find({}, function (error, search) {
 		if (error) {

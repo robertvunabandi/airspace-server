@@ -6,9 +6,11 @@ const User = new Schema({
 	f_name: {type: String, required: true},
 	l_name: {type: String, required: true},
 	email: {type: String, required: true},
-	dob: {type: String, required: true}, // MM-DD-YYYY, String
-	description: {type: String, required: false},
-	phone: {type: String, required: true},
+	dob: {type: String, required: false}, // MM-DD-YYYY, String
+	location: {type: String, required: false}, // default: the best place on earth
+	favorite_travel_place: {type: String, required: false}, // default: wherever has the cheapest flight
+	suitcase_color: {type: String, required: false}, // default: rainbow
+	phone: {type: String, required: false},
 	travel_notices_ids: {type:Array, required: false},
 	requests_ids: {type:Array, required: false}
 });
