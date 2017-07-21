@@ -1,14 +1,21 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const Message = new Schema({
+
+let Message = new Schema({
 	suid: {type: String, required: true}, // id of the user that sends the message
 	ruid: {type: String, required: true}, // id of the user that receives the message
-	body: {type: String, required: true}, // ID on the key
-	time: {type: Number, required: true} // this is the time the message was sent in ms from 1900 (used with Date)
+	body: {type: String, required: true}, // body of the message
+	time: {type: Number, required: true}, // this is the time the message was sent in ms from 1900 (used with Date)
+	read: {type: Boolean, required: true} // if this message was read by recipient
 });
 
-module.exports = mongoose.model('Message', Message, "COLLECTIONAMETOFIND");
+function messageCreator(suid_, ruid_, sORr) {
+	let collectionName = sORr ? `${suid_}${ruid_}`: `${ruid_}${suid_}`;
+	return mongoose.model('Message', Message, collectionName); // Collection is the concatenation of both suid and ruid
+}
+
+module.exports = messageCreator; // creates a Message model, with the concatenation of collections
 
 /*
 Mongoose#model(name, [schema], [collection], [skipInit])

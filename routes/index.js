@@ -425,6 +425,7 @@ router.get('/login', function (request, response, next) {
 router.get('/travels', function (request, response, next) {
 	// TODO - ENDPOINT /travels INCOMPLETE, REMOVE 501 ON COMPLETION
 	/*
+
 	 curl -X GET http://localhost:3000/travels?to=newark&from=seattle&day_by=12&month_by=4&year_by=2018
 	 curl --header "APC-Auth: 96dc04b3fb" -X GET https://www.air-port-codes.com/airport-codes-api/multi/demo?term=newark
 	 curl --header "APC-Auth: 96dc04b3fb, Referer: https://www.air-port-codes.com/airport-codes-api/multi/" -X GET https://www.air-port-codes.com/api/v1/multi?term=newark
@@ -439,7 +440,7 @@ router.get('/travels', function (request, response, next) {
 	log_requested_items(request); // DEBUG
 
 	// callback once we get the result
-	let callback = function (status_, travelers_, error_) {
+	/* let callback = function (status_, travelers_, error_) {
 		// TODO - Modify this callback to be more versatile
 		// callback for responding to send to user
 		response.setHeader('Content-Type', 'application/json');
@@ -453,6 +454,22 @@ router.get('/travels', function (request, response, next) {
 			server_response = {success: true, travelers: travelers_, error: false};
 		}
 		response.send(JSON.stringify(server_response));
+	}; */
+	// callback once we get the result
+	let callback = function (status_, data_, message_, error_) {
+		// callback for responding to send to user
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_) {
+			server_response = {success: false, data: null, message: message_, error: error_};
+		} else if (data_ === null) {
+			// if we get to here that means travel_notice_ is not empty
+			server_response = {success: false, data: null, message: message_, error: false};
+		} else {
+			server_response = {success: true, data: data_, message: message_, error: false};
+		}
+		response.send(JSON.stringify(server_response));
 	};
 
 	// get the from's and too's from the request with the dateby
@@ -461,6 +478,7 @@ router.get('/travels', function (request, response, next) {
 	let dayBy = sf_req(request, "day_by", "travels");
 	let monthBy = sf_req(request, "month_by", "travels");
 	let yearBy = sf_req(request, "year_by", "travels");
+	let requestObject = { from: fromQuery, to: toQuery, day_by: dayBy, month_by: monthBy, year_by: yearBy };
 
 	// create the options for the requests and final variables
 	let optionsFrom = {
@@ -486,12 +504,12 @@ router.get('/travels', function (request, response, next) {
 		// assuming all is correct, body_to will be the result
 		// error keeps happening, need an APC-Auth-Secret
 		if (error_from) {
-			callback(502, null, {message: "Bad Internal Server Error."});
+			callback(502, null, "Internal Server Error", true);
 		} else {
 			console.log(body_from); // TODO - REM LOG
 			airportsFrom = JSON.parse(body_from).airports; // this is an array
 			if (isEmpty(airportsFrom) || isEmpty(airportsTo)) {
-				callback(404, null, "No traveler found.");
+				callback(404, null, "No traveler found", false);
 			} else {
 				performSearch();
 			}
@@ -501,7 +519,7 @@ router.get('/travels', function (request, response, next) {
 		// assuming all is correct, body_to will be the result
 		// error keeps happening, need an APC-Auth-Secret
 		if (error_to) {
-			callback(502, null, {message: "Bad Internal Server Error."});
+			callback(502, null, "Internal Server Error", true);
 		} else {
 			console.log(body_to); // TODO - REM LOG
 			airportsTo = JSON.parse(body_to).airports; // this is an array
@@ -511,7 +529,7 @@ router.get('/travels', function (request, response, next) {
 
 	if (isEmpty(fromQuery) || isEmpty(toQuery) || isEmpty(dayBy) || isEmpty(monthBy) || isEmpty(yearBy)) {
 		// TODO - make json object holding these parameters and send it back
-		callback(403, null, `Some or all of parameters were not specified. All parameters are required. Given: from: ${fromQuery}, to: ${toQuery}, dayBy: ${dayBy}, monthBy: ${monthBy}, yearBy: ${yearBy}.`);
+		callback(403, null, {message: `Some or all of parameters were not specified. All parameters are required.`, given: requestObject}, true);
 	} else {
 		// make the request for to
 		REQUEST_HTTP(optionsTo, callbackOnTo);
@@ -523,32 +541,35 @@ router.get('/travels', function (request, response, next) {
 		TravelNotice.find({}, function (error, search) {
 			if (error) {
 				// handle error, interval server or database error while calling to find travelNotices
-				callback(500, null, error);
+				callback(500, null, 'Internal Server Error', error);
 			} else if (search) {
 				// Filter the list for elements that matched the search
 				performSearchFinal(search);
 			} else {
 				// return null if there was no search found
-				callback(200, null, false);
+				callback(200, null, 'No travel notice found in the database', false);
 			}
 		});
 	}
 
 	function performSearchFinal(resultsFromSearch) {
-		console.log("\nInside of performSearchFinal, GOOD"); //
 		// TODO - FINISH THIS FUNCTION
 		let RES = resultsFromSearch.slice(0); // copy the list of result
 		let TEMP = [];
 		// get matches from Airports From
 		// - get the list of from airports iata
 		let IATA_FROM = [];
+
 		for (let i = 0; i < airportsFrom.length; i++) {
 			IATA_FROM.push(airportsFrom[i]["iata"]);
 		}
 		// - see if any of those matches the resulting search
 		for (let i = 0; i < RES.length; i++) {
-			if (RES[i].dep_iata in IATA_FROM) {
-				TEMP.push(RES[i]);
+			for (let j = 0; j < IATA_FROM.length; j++){
+				if (RES[i].dep_iata === IATA_FROM[j]) {
+					TEMP.push(RES[i]);
+					break;
+				}
 			}
 		}
 
@@ -560,23 +581,55 @@ router.get('/travels', function (request, response, next) {
 		}
 		RES = [];
 		// - see if any of those matches the resulting search
-		for (let i = 0; i < RES.length; i++) {
-			if (TEMP[i].arr_iata in IATA_TO) {
-				RES.push(TEMP[i]);
+		for (let i = 0; i < TEMP.length; i++) {
+			for (let j = 0; j < IATA_TO.length; j++){
+				if (TEMP[i].arr_iata === IATA_TO[j]) {
+					RES.push(TEMP[i]);
+					break;
+				}
 			}
 		}
 
 		// now match by the time
-		LOG.i(IATA_FROM);
-		LOG.i(IATA_TO);
-		LOG.i(RES);
-		// if res is empty here, we make a 404 callback
-		if (RES.length <= 0) {
-			callback(404, null, "No travel notice found"); // JUST FOR NOW
-		} else {
-			// TODO - find by dates now on what we have in RES
-			callback(501, null, "Error keeps occurring"); // JUST FOR NOW
+		TEMP = [];
+		for (let i = 0; i < RES.length; i++){
+			if (yearBy > RES[i].arr_year){
+				TEMP.push(RES[i]);
+			} else if (yearBy === RES[i].arr_year){
+				if (monthBy > RES[i].arr_month){
+					TEMP.push(RES[i]);
+				} else if (monthBy === RES[i].arr_month) {
+					if (dayBy >= RES[i].arr_day) {
+						// this pushes it a bit too close
+						TEMP.push(RES[i]);
+					}
+					// otherwise we don't add the travel notice at RES[i]
+				}
+				// otherwise we don't add the travel notice at RES[i]
+			}
+			// otherwise we don't add the travel notice at RES[i]
 		}
+		// declare filters here!
+		let filtersOn = false;
+		if (!isEmpty(sf_req(request, "filters_on", "travels"))) {
+			filtersOn = sf_req_bool(request, "filters_on", "travels");
+		}
+
+		if (filtersOn && false && TEMP.length <= 0) { // TODO - when filtering is done, remove the && false
+			performSearchFiltering(TEMP);
+		} else {
+			// if res is empty here, we make a 404 callback
+			if (TEMP.length <= 0) {
+				callback(404, null, "No travel notice found. please modify search queries.", false); // JUST FOR NOW
+			} else {
+				callback(200, TEMP, "Results found!", false);
+			}
+		}
+	}
+
+	function performSearchFiltering(currentSearchResults){
+		// TODO - do more filtering on RES based on filters
+		callback(501, null, "Filtering not implemented"); // JUST FOR NOW
 	}
 });
 
