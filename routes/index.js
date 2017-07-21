@@ -425,8 +425,8 @@ router.get('/login', function (request, response, next) {
 router.get('/travels', function (request, response, next) {
 	// TODO - ENDPOINT /travels INCOMPLETE, REMOVE 501 ON COMPLETION
 	/*
-
-	 curl -X GET http://localhost:3000/travels?to=newark&from=seattle&day_by=12&month_by=4&year_by=2018
+	 curl -X GET https://mysterious-headland-54722.herokuapp.com/travels?to=Boston&from=San%20Francisco&day_by=41&month_by=4&year_by=2018
+	 curl -X GET http://localhost:3000/travels?to=Boston&from=San%20Francisco&day_by=41&month_by=4&year_by=2018
 	 curl --header "APC-Auth: 96dc04b3fb" -X GET https://www.air-port-codes.com/airport-codes-api/multi/demo?term=newark
 	 curl --header "APC-Auth: 96dc04b3fb, Referer: https://www.air-port-codes.com/airport-codes-api/multi/" -X GET https://www.air-port-codes.com/api/v1/multi?term=newark
 	 curl --header "APC-Auth: b76ea0b73d" -X GET https://www.air-port-codes.com/api/v1/multi?term=newark
@@ -455,6 +455,7 @@ router.get('/travels', function (request, response, next) {
 		}
 		response.send(JSON.stringify(server_response));
 	}; */
+
 	// callback once we get the result
 	let callback = function (status_, data_, message_, error_) {
 		// callback for responding to send to user
@@ -475,9 +476,9 @@ router.get('/travels', function (request, response, next) {
 	// get the from's and too's from the request with the dateby
 	let fromQuery = sf_req(request, "from", "travels");
 	let toQuery = sf_req(request, "to", "travels");
-	let dayBy = sf_req(request, "day_by", "travels");
-	let monthBy = sf_req(request, "month_by", "travels");
-	let yearBy = sf_req(request, "year_by", "travels");
+	let dayBy = sf_req_int(request, "day_by", "travels");
+	let monthBy = sf_req_int(request, "month_by", "travels");
+	let yearBy = sf_req_int(request, "year_by", "travels");
 	let requestObject = { from: fromQuery, to: toQuery, day_by: dayBy, month_by: monthBy, year_by: yearBy };
 
 	// create the options for the requests and final variables
@@ -528,7 +529,7 @@ router.get('/travels', function (request, response, next) {
 	};
 
 	if (isEmpty(fromQuery) || isEmpty(toQuery) || isEmpty(dayBy) || isEmpty(monthBy) || isEmpty(yearBy)) {
-		// TODO - make json object holding these parameters and send it back
+		// if any of those are empty, we can't perform search
 		callback(403, null, {message: `Some or all of parameters were not specified. All parameters are required.`, given: requestObject}, true);
 	} else {
 		// make the request for to
@@ -553,7 +554,6 @@ router.get('/travels', function (request, response, next) {
 	}
 
 	function performSearchFinal(resultsFromSearch) {
-		// TODO - FINISH THIS FUNCTION
 		let RES = resultsFromSearch.slice(0); // copy the list of result
 		let TEMP = [];
 		// get matches from Airports From
