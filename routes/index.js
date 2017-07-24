@@ -1209,7 +1209,7 @@ router.post("/travel_notice_update", function (request, response, next) {
 				if (!isEmpty(Ritem_fragile)) foundTravelNotice.item_fragile = sf_req_bool(request, "item_fragile", "travel_notice_add");
 				if (!isEmpty(Ritem_liquid)) foundTravelNotice.item_liquid = sf_req_bool(request, "item_liquid", "travel_notice_add");
 				if (!isEmpty(Ritem_other)) foundTravelNotice.item_other = sf_req_bool(request, "item_other", "travel_notice_add");
-				if (!isEmpty(Rdrop_off_flexibility)) foundTravelNotice.pick_up_flexibility = Rdrop_off_flexibility;
+				if (!isEmpty(Rdrop_off_flexibility)) foundTravelNotice.drop_off_flexibility = Rdrop_off_flexibility;
 				if (!isEmpty(Rpick_up_flexibility)) foundTravelNotice.pick_up_flexibility = Rpick_up_flexibility;
 				if (!isEmpty(Rrequests)) foundTravelNotice.requests_ids = Rrequests;
 
@@ -1222,7 +1222,7 @@ router.post("/travel_notice_update", function (request, response, next) {
 						callback(500, null, "Saved Travel was empty! An unknown error must have occurred.", true);
 					} else {
 						// otherwise, we're good
-						callback(202, savedTravelNotice, "Travel notice updated successfully!", false);
+						callback(202, savedTravelNotice, {message:"Travel notice updated successfully!", parameters_received: parameters}, false);
 					}
 				});
 			}
