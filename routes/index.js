@@ -1174,6 +1174,21 @@ router.post("/travel_notice_update", function (request, response, next) {
 	let Rpick_up_flexibility = sf_req(request, "pick_up_flexibility", "travel_notice_update");
 	let Rrequests = sf_req(request, "requests_ids", "travel_notice_update");
 
+	let parameters = {
+		item_envelopes: Ritem_envelopes,
+		item_smbox: Ritem_smbox,
+		item_lgbox: Ritem_lgbox,
+		item_clothing: Ritem_clothing,
+		item_fragile: Ritem_fragile,
+		item_liquid: Ritem_liquid,
+		item_other: Ritem_other,
+		drop_off_flexibility: Rdrop_off_flexibility,
+		pick_up_flexibility: Rpick_up_flexibility,
+		requests: Rrequests
+	};
+
+	console.log(parameters);
+
 	if (isEmpty(R_id) || isEmpty(Rtuid)) {
 		callback(403, null, `Either id or travel_notice_id or both were empty. travel_notice_id: ${R_id}, tuid:${Rtuid}`, true);
 	} else {
