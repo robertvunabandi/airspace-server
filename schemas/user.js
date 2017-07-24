@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const User = new Schema({
+	// suitcase ints: Black, White, Red, Purple, Blue, Green, Yellow, Orange, Grey, Rainbow
 	// User id's is automatically generated
 	f_name: {type: String, required: true},
 	l_name: {type: String, required: true},
@@ -9,10 +10,11 @@ const User = new Schema({
 	dob: {type: String, required: false}, // MM-DD-YYYY, String
 	location: {type: String, required: false}, // default: the best place on earth
 	favorite_travel_place: {type: String, required: false}, // default: wherever has the cheapest flight
-	suitcase_color: {type: String, required: false}, // default: rainbow
+	suitcase_color_integer: {type: String, required: false}, // default: rainbow
 	phone: {type: String, required: false},
 	travel_notices_ids: {type:Array, required: false},
-	requests_ids: {type:Array, required: false}
+	requests_ids: {type:Array, required: false},
+	chat_collections: {type:Array, required: false}
 });
 
 module.exports = mongoose.model('User', User, "users");
