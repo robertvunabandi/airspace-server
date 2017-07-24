@@ -1281,7 +1281,7 @@ router.get("/request_get_my", function (request, response, next){
 	let requestList = [];
 
 	// set the uid of the user that is asking to see his requests
-	let uid = sf_req(request, "uid", "request_get_all");
+	let uid = sf_req(request, "uid", "request_get_my");
 
 	// find all requests and rule out those that are bad
 	ShippingRequest.find({}, function(findingError, requests) {
@@ -1311,7 +1311,7 @@ router.get("/request_get_my", function (request, response, next){
  * curl -X GET http://localhost:3000/request_get_my
  *
  * */
-router.post("/request_get_to_me", function (request, response, next){
+router.get("/request_get_to_me", function (request, response, next){
 
 	// callback for responding to send to user
 	let callback = function (status_, requestIDArray_, message_, error_) {
@@ -1333,7 +1333,7 @@ router.post("/request_get_to_me", function (request, response, next){
 	let requestIDList = [];
 
 	// set the uid of the user that is asking to see his requests
-	let uid = sf_req(request, "uid", "request_get_all");
+	let uid = sf_req(request, "uid", "request_get_to_me");
 
 	// find all requests and rule out those that are bad
 	User.findOne({_id: uid}, function(findingError, userFound) {
@@ -1354,6 +1354,47 @@ router.post("/request_get_to_me", function (request, response, next){
 				}
 
 			}
+		}
+	});
+});
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* GET one users wants to see all the requests that people sent to him
+ * curl -X GET http://localhost:3000/request_get_my
+ *
+ * */
+router.get("/request_get", function (request, response, next){
+	// callback for responding to send to user
+	let callback = function (status_, request_, message_, error_) {
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_) {
+			server_response = {success: false, data: null, message: message_, error: error_};
+		} else if (isEmpty(request_)) {
+			// if we get to here that means travel_notice_ is not empty
+			server_response = {success: false, data: null, message: message_, error: false};
+		} else {
+			server_response = {success: true, data: request_, message: message_, error: false};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+
+
+	// set the uid of the user that is asking to see his requests
+	let request_id = sf_req(request, "uid", "request_get");
+
+	ShippingRequest.findOne({_id: request_id}, function(findingError, requestFound) {
+		if (findingError) {
+			callback(500, null, "Internal Server error.", findingError);
+		} else if (isEmpty(requestFound)) {
+			callback(404, null, "Request not found", true);
+		} else {
+			callback(200, requestFound, "Found", false);
 		}
 	});
 });
