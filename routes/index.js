@@ -954,10 +954,9 @@ router.post("/request_send", function (request, response, next) {
 
 	// populate the new request
 	let requestedCount = sf_req_int(request, "item_total", "request");
-	let sendingBool = sf_req_bool(request, "sending", "request");
-	let receivingBool = sf_req_bool(request, "receiving", "request");
+	let action = sf_req_int(request, "action", "request");
 	// - this tests whether the requester is neither receiving nor sending something
-	let SENDRECEIVEBOOLEAN = !sendingBool && !receivingBool;
+	let SENDRECEIVEBOOLEAN = !(action === 0 || action === 1);
 	// - if they are both false, both negations will be true thus making that true
 	let itemOther = sf_req_bool(request, "item_other", "request");
 	// - default to null
@@ -967,8 +966,7 @@ router.post("/request_send", function (request, response, next) {
 	let newRequest = new ShippingRequest({
 		travel_notice_id: sf_req(request, "travel_notice_id", "request"),
 		ruid: ruid, // we assume the requester exists in DB
-		sending: sendingBool, // is this person sending it
-		receiving: receivingBool, // is this person receiving it
+		action: action, // is this person sending it
 		status: 0,
 		item_envelopes: sf_req_bool(request, "item_envelopes", "request"),
 		item_smbox: sf_req_bool(request, "item_smbox", "request"),
@@ -1365,7 +1363,6 @@ router.get("/request_get_to_me", function (request, response, next){
 
 /* GET one users wants to see all the requests that people sent to him
  * curl -X GET http://localhost:3000/request_get_my
- *
  * */
 router.get("/request_get", function (request, response, next){
 	// callback for responding to send to user
