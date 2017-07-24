@@ -953,32 +953,47 @@ router.post("/request_send", function (request, response, next) {
 	};
 
 	// populate the new request
-	let requestedCount = sf_req_int(request, "item_total", "request");
-	let action = sf_req_int(request, "action", "request");
+	let requestedCount = sf_req_int(request, "item_total", "request_send");
+	let action = sf_req_int(request, "action", "request_send");
 	// - this tests whether the requester is neither receiving nor sending something
 	let SENDRECEIVEBOOLEAN = !(action === 0 || action === 1);
 	// - if they are both false, both negations will be true thus making that true
-	let itemOther = sf_req_bool(request, "item_other", "request");
+	let itemOther = sf_req_bool(request, "item_other", "request_send");
 	// - default to null
-	let itemOtherName = itemOther ? sf_req(request, "item_other_name", "request") : null;
+	let itemOtherName = itemOther ? sf_req(request, "item_other_name", "request_send") : null;
 	// - continue population
+	// TODO - check if those are empty !!!
+	let recipient_ = {
+		name: sf_req(request, "recipient_name", "request_send"),
+		email: sf_req(request, "recipient_email", "request_send"),
+		phone: sf_req(request, "recipient_phone", "request_send"),
+		uses_app: sf_req_bool(request, "recipient_uses_app", "request_send")
+	};
+	let deliverer_ = {
+		name: sf_req(request, "deliverer_name", "request_send"),
+		email: sf_req(request, "deliverer_email", "request_send"),
+		phone: sf_req(request, "deliverer_phone", "request_send"),
+		uses_app: sf_req_bool(request, "deliverer_uses_app", "request_send")
+	};
 	let ruid = sf_req(request, "ruid", "request");
 	let newRequest = new ShippingRequest({
-		travel_notice_id: sf_req(request, "travel_notice_id", "request"),
+		travel_notice_id: sf_req(request, "travel_notice_id", "request_send"),
 		ruid: ruid, // we assume the requester exists in DB
 		action: action, // is this person sending it
 		status: 0,
-		item_envelopes: sf_req_bool(request, "item_envelopes", "request"),
-		item_smbox: sf_req_bool(request, "item_smbox", "request"),
-		item_lgbox: sf_req_bool(request, "item_lgbox", "request"),
-		item_clothing: sf_req_bool(request, "item_clothing", "request"),
-		item_fragile: sf_req_bool(request, "item_fragile", "request"),
-		item_liquid: sf_req_bool(request, "item_liquid", "request"),
+		recipient: recipient_,
+		deliverer: deliverer_,
+		item_envelopes: sf_req_bool(request, "item_envelopes", "request_send"),
+		item_smbox: sf_req_bool(request, "item_smbox", "request_send"),
+		item_lgbox: sf_req_bool(request, "item_lgbox", "request_send"),
+		item_clothing: sf_req_bool(request, "item_clothing", "request_send"),
+		item_fragile: sf_req_bool(request, "item_fragile", "request_send"),
+		item_liquid: sf_req_bool(request, "item_liquid", "request_send"),
 		item_other: itemOther,
 		item_other_name: itemOtherName,
 		item_total: requestedCount,
-		drop_off_flexibility: sf_req(request, "drop_off_flexibility", "request"),
-		pick_up_flexibility: sf_req(request, "pick_up_flexibility", "request")
+		drop_off_flexibility: sf_req(request, "drop_off_flexibility", "request_send"),
+		pick_up_flexibility: sf_req(request, "pick_up_flexibility", "request_send")
 	});
 
 	// we need to have at least 1 item requested so throw an error
