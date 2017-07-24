@@ -28,7 +28,7 @@ const router = express.Router();
 // Schemas
 const User = require('../schemas/user.js');
 const TravelNotice = require('../schemas/travel_notice.js');
-const RawrRequest = require('../schemas/request.js');
+const ShippingRequest = require('../schemas/request.js');
 const MessageCreator = require('../schemas/message.js');
 
 // helpers
@@ -963,13 +963,13 @@ router.post("/request_send", function (request, response, next) {
 	// - default to null
 	let itemOtherName = itemOther ? sf_req(request, "item_other_name", "request") : null;
 	// - continue population
-	let newRequest = new RawrRequest({
+	let ruid = sf_req(request, "ruid", "request");
+	let newRequest = new ShippingRequest({
 		travel_notice_id: sf_req(request, "travel_notice_id", "request"),
-		ruid: sf_req(request, "ruid", "request"), // we assume the requester exists in DB
+		ruid: ruid, // we assume the requester exists in DB
 		sending: sendingBool, // is this person sending it
 		receiving: receivingBool, // is this person receiving it
-		declined: false,
-		accepted: false,
+		status: 0,
 		item_envelopes: sf_req_bool(request, "item_envelopes", "request"),
 		item_smbox: sf_req_bool(request, "item_smbox", "request"),
 		item_lgbox: sf_req_bool(request, "item_lgbox", "request"),
@@ -999,26 +999,67 @@ router.post("/request_send", function (request, response, next) {
 			} else {
 				// if we found a matching travel notice, we save this request
 
-				// create the function for saving this request
-				let save_request = function () {
+				// create a function for saving this request to the user's lists of requests
+				let save_request_to_user = function(savedRequest, savedTn){
+					// find the user
+					User.findOne({_id: ruid}, function (findingUSRError, userFound){
+						if (findingUSRError) {
+							callback(500, savedRequest, savedTn, "Error in findingUSRError", true);
+						} else if (isEmpty(userFound)){
+							// TODO - Delete the saved request, this should never happen
+							callback(403, savedRequest, savedTn, "User was not found! Wth...", true);
+						} else {
+							// modify content
+							try {
+								userFound.requests_ids.push(savedRequest._id.valueOf());
+							} catch (e) {
+								userFound.requests_ids = [savedRequest._id.valueOf()];
+							}
+							userFound.save(function(savingUSRError, userSaved){
+								if (savingUSRError){
+									callback(500, savedRequest, savedTn, "Error in savingUSRError", true);
+								} else {
+									// final callback
+									callback(201, savedRequest, savedTn, "Saved successfully", false);
+								}
+							});
+						}
+					});
+					// save the request to him
+				};
+
+				// create the function for saving this request to the travel notice
+				let save_request_to_tn = function () {
 					newRequest.save(function (saving_error, request_saved) {
 						// this will throw an error if one of the required variables is not given.
 						if (!saving_error) {
+							// we add rs_add to the travel notice requests_ids
 							let rs_add = {
 								user_id: request_saved.ruid,
 								request_id: request_saved._id.valueOf()
 							};
 							try {
-								// the array be not be initialized so we do a try catch. However, it should be!
+								// the array be not be initialized so we do a try catch. However, it should be initialized!
 								tn.requests_ids.push(rs_add);
-								tn.save();
-								callback(201, request_saved, tn, "Saved successfully", false);
+								tn.save(function(tnSavingError, newTN) {
+									if (tnSavingError) {
+										callback(500, null, null, "Error in tnSavingError", tnSavingError);
+									} else {
+										save_request_to_user(request_saved, newTN);
+									}
+								});
+
 							} catch (err) {
 								console.log("ERROR IN tn.requests_ids_push", err);
 								tn.requests_ids = [];
 								tn.requests_ids.push(rs_add);
-								tn.save();
-								callback(201, request_saved, tn, "Saved successfully", false);
+								tn.save(function(tnSavingError, newTN) {
+									if (tnSavingError) {
+										callback(500, null, null, "Error in tnSavingError", tnSavingError);
+									} else {
+										save_request_to_user(request_saved, newTN);
+									}
+								});
 							}
 						} else {
 							console.log(`\n\n\n * * * ** Saving error occured\n\n\n`, saving_error);
@@ -1040,7 +1081,7 @@ router.post("/request_send", function (request, response, next) {
 					if (i >= tn.requests_ids.length - 1) {
 						if (!requestSent) {
 							// if i is the last index and the request has not been sent, save it
-							save_request();
+							save_request_to_tn();
 							// we wait for the last index because of NodeJS's a-synchronousness
 						} else {
 							callback(403, null, null, "Request has already been sent", true);
@@ -1053,6 +1094,300 @@ router.post("/request_send", function (request, response, next) {
 			}
 		});
 	}
+});
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* POST send or receive request, changes status from 0 to 1
+ * curl -X POST http://localhost:3000/request_accept
+ *
+ * */
+router.post("/request_accept", function (request, response, next){
+	// callback once we get the result
+	let callback = function (status_, request_, travel_notice_, message_, error_) {
+		// callback for responding to send to user
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_) {
+			server_response = {success: false, request: null, travel_notice: null, message: message_, error: error_};
+		} else if (request_ === null) {
+			// if we get to here that means travel_notice_ is not empty
+			server_response = {success: false, request: null, travel_notice: null, message: message_, error: false};
+		} else {
+			server_response = {
+				success: true,
+				request: request_,
+				travel_notice: travel_notice_,
+				message: message_,
+				error: false
+			};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+
+	let request_id = sf_req(request, 'request_id', 'request_accept');
+	let traveler_id = sf_req(request, 'traveler_id', 'request_accept');
+	let travel_notice_id = sf_req(request, 'travel_notice_id', 'request_accept');
+
+	if (isEmpty(request_id) || isEmpty(traveler_id)){}
+	// find the specific request
+	ShippingRequest.findOne({_id: request_id}, function(findingSRError, shippingRequest) {
+		if (findingSRError){
+			callback(500, null, null, "Internal Server Error in findingSRError", findingSRError);
+		} else if (isEmpty(shippingRequest)){
+			callback(404, null, null, "Request not found", false);
+		} else {
+			shippingRequest.status = 1; // status
+			// confirm that the user has this travelnotice by checking that the id of the request is in the travel notice
+			TravelNotice.findOne({_id: travel_notice_id}, function(findingTVLError, travelNotice) {
+				if (findingTVLError) {
+					callback(500, null, null, "Internal Server Error in findingTVLError", findingTVLError);
+				} else if (isEmpty(shippingRequest)){
+					callback(403, null, null, "Travel notice not found", false);
+				} else {
+					// check if request_id is in this travel notice
+					for (let i = 0; i < travelNotice.requests_ids.length; i++) {
+						let test_request = travelNotice.requests_ids[i];
+						if (test_request.request_id == request_id) {
+							// save the request if we find it
+							shippingRequest.save(function(savingError, savedRequest){
+								if (savingError) {
+									callback(500, null, travelNotice, "Error while saving the request. Travel notice was found however", savingError);
+								} else {
+									callback(201, savedRequest, travelNotice, "Request accepted", false);
+								}
+							});
+							break;
+						}
+						if (i >= travelNotice.requests_ids.length - 1) {
+							callback(403, null, null, "Request not found in Travel notice", true);
+						}
+					}
+				}
+			});
+		}
+	});
+});
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* POST send or receive request, changes status from 0 to 2
+ * curl -X POST http://localhost:3000/request_decline
+ *
+ * */
+router.post("/request_decline", function (request, response, next){
+	// callback once we get the result
+	let callback = function (status_, request_, travel_notice_, message_, error_) {
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_) {
+			server_response = {success: false, request: null, travel_notice: null, message: message_, error: error_};
+		} else if (request_ === null) {
+			// if we get to here that means travel_notice_ is not empty
+			server_response = {success: false, request: null, travel_notice: null, message: message_, error: false};
+		} else {
+			server_response = {
+				success: true,
+				request: request_,
+				travel_notice: travel_notice_,
+				message: message_,
+				error: false
+			};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+
+	let request_id = sf_req(request, 'request_id', 'request_accept');
+	let traveler_id = sf_req(request, 'traveler_id', 'request_accept');
+	let travel_notice_id = sf_req(request, 'travel_notice_id', 'request_accept');
+
+	if (isEmpty(request_id) || isEmpty(traveler_id) || isEmpty(travel_notice_id)){
+		callback(403, null, null, `Some or all of the parameters given are empty. `, true);
+	}
+	// find the specific request
+	ShippingRequest.findOne({_id: request_id}, function(findingSRError, shippingRequest) {
+		if (findingSRError){
+			callback(500, null, null, "Internal Server Error in findingSRError", findingSRError);
+		} else if (isEmpty(shippingRequest)){
+			callback(404, null, null, "Request not found", false);
+		} else {
+			shippingRequest.status = 2; // status
+			// confirm that the user has this travelnotice by checking that the id of the request is in the travel notice
+			TravelNotice.findOne({_id: travel_notice_id}, function(findingTVLError, travelNotice) {
+				if (findingTVLError) {
+					callback(500, null, null, "Internal Server Error in findingTVLError", findingTVLError);
+				} else if (isEmpty(shippingRequest)){
+					callback(403, null, null, "Travel notice not found", false);
+				} else {
+					// check if request_id is in this travel notice
+					for (let i = 0; i < travelNotice.requests_ids.length; i++) {
+						let test_request = travelNotice.requests_ids[i];
+						if (test_request.request_id == request_id) {
+							// save the request if we find it
+							shippingRequest.save(function(savingError, savedRequest){
+								if (savingError) {
+									callback(500, null, travelNotice, "Error while saving the request. Travel notice was found however", savingError);
+								} else {
+									callback(201, savedRequest, travelNotice, "Request accepted", false);
+								}
+							});
+							break;
+						}
+						if (i >= travelNotice.requests_ids.length - 1) {
+							callback(403, null, null, "Request not found in Travel notice", true);
+						}
+					}
+				}
+			});
+		}
+	});
+});
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* GET one users wants to see all the requests that he has sent
+ * curl -X GET http://localhost:3000/request_get_my
+ *
+ * */
+router.get("/request_get_my", function (request, response, next){
+
+	// callback for responding to send to user
+	let callback = function (status_, requestArray_, message_, error_) {
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_) {
+			server_response = {success: false, data: null, message: message_, error: error_};
+		} else if (isEmpty(requestArray_)) {
+			// if we get to here that means travel_notice_ is not empty
+			server_response = {success: false, data: requestArray_, message: message_, error: false};
+		} else {
+			server_response = {success: true, data: requestArray_, message: message_, error: false};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+
+	// initialize the list of requests to be sent to an empty list
+	let requestList = [];
+
+	// set the uid of the user that is asking to see his requests
+	let uid = sf_req(request, "uid", "request_get_all");
+
+	// find all requests and rule out those that are bad
+	ShippingRequest.find({}, function(findingError, requests) {
+		if (findingError) {
+			callback(500, null, "Internal Server Error at findingError", findingError);
+		} else if (isEmpty(requests)) {
+			callback(404, null, "No requests found", true);
+		} else {
+			for (let i = 0; i < requests.length; i++) {
+				if (requests[i].ruid === uid) {
+					requestList.push(requests[i]);
+				}
+				if (i >= requests.length - 1) {
+					callback(200, requestList, "Request found may be empty", false);
+				}
+			}
+		}
+	});
+});
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* GET one users wants to see all the requests that people sent to him
+ * curl -X GET http://localhost:3000/request_get_my
+ *
+ * */
+router.post("/request_get_to_me", function (request, response, next){
+
+	// callback for responding to send to user
+	let callback = function (status_, requestIDArray_, message_, error_) {
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_) {
+			server_response = {success: false, data: null, message: message_, error: error_};
+		} else if (isEmpty(requestIDArray_)) {
+			// if we get to here that means travel_notice_ is not empty
+			server_response = {success: false, data: requestIDArray_, message: message_, error: false};
+		} else {
+			server_response = {success: true, data: requestIDArray_, message: message_, error: false};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+
+	// initialize the list of requests to be sent to an empty list
+	let requestIDList = [];
+
+	// set the uid of the user that is asking to see his requests
+	let uid = sf_req(request, "uid", "request_get_all");
+
+	// find all requests and rule out those that are bad
+	User.findOne({_id: uid}, function(findingError, userFound) {
+		if (findingError) {
+			callback(500, null, "Internal Server Error at findingError", findingError);
+		} else if (isEmpty(userFound)) {
+			callback(404, null, "No requests found", true);
+		} else {
+			for (let i = 0; i < userFound.travel_notices_ids.length; i++) {
+				// loop through each travel notice and get all the requestsids that are associated with it
+				let tn = userFound.travel_notices_ids[i];
+				for (let j = 0; j < tn.requests_ids.length; j++){
+					// push all these ids in the requestIDList
+					requestIDList.push(tn.requests_ids[i].request_id);
+					if (i >= userFound.travel_notices_ids.length - 1 && j >= tn.requests_ids.length - 1) {
+						callback(200, requestIDList, "list of requests found, may be null", false);
+					}
+				}
+
+			}
+		}
+	});
+});
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+router.post("/request_delete", function (request, response, next){
+	// callback once we get the result
+	let callback = function (status_, request_, travel_notice_, message_, error_) {
+		// callback for responding to send to user
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_) {
+			server_response = {success: false, request: null, travel_notice: null, message: message_, error: error_};
+		} else if (request_ === null) {
+			// if we get to here that means travel_notice_ is not empty
+			server_response = {success: false, request: null, travel_notice: null, message: message_, error: false};
+		} else {
+			server_response = {
+				success: true,
+				request: request_,
+				travel_notice: travel_notice_,
+				message: message_,
+				error: false
+			};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+
+	callback(501, null, null, "Not implemented", true);
 });
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
@@ -1174,6 +1509,7 @@ router.post("/travel_notice_update", function (request, response, next) {
 	let Rpick_up_flexibility = sf_req(request, "pick_up_flexibility", "travel_notice_update");
 	let Rrequests = sf_req(request, "requests_ids", "travel_notice_update");
 
+	// parameters for debugging
 	let parameters = {
 		item_envelopes: Ritem_envelopes,
 		item_smbox: Ritem_smbox,
@@ -1186,8 +1522,6 @@ router.post("/travel_notice_update", function (request, response, next) {
 		pick_up_flexibility: Rpick_up_flexibility,
 		requests: Rrequests
 	};
-
-	console.log(parameters);
 
 	if (isEmpty(R_id) || isEmpty(Rtuid)) {
 		callback(403, null, `Either id or travel_notice_id or both were empty. travel_notice_id: ${R_id}, tuid:${Rtuid}`, true);

@@ -6,8 +6,8 @@ const Request = new Schema({
 	ruid: {type: String, required: true}, // id of the user that puts out the travel notice
 	sending: {type: Boolean, required: true}, // is this person sending the item being sent
 	receiving: {type: Boolean, required: true}, // is this person receiving the item being sent
-	accepted: {type: Boolean, required: true}, // whether this request has been accepted or not
-	declined: {type: Boolean, required: true}, // whether this request has been accepted or not
+	status: {type: Number, required: true}, // whether this request has been accepted or not
+	// 0: pending, 1: accepted, 2: declined, 3: invalid
 
 	// boolean whether requester is asking these items
 	item_envelopes: {type: Boolean, required: false}, 
@@ -18,7 +18,10 @@ const Request = new Schema({
 	item_liquid: {type: Boolean, required: false},
 	item_other: {type: Boolean, required: false},
 	item_other_name: {type: String, required: false}, // name of other item 
-	item_total: {type: Number, required: true}, 
+	item_total: {type: Number, required: true},
+	//
+	recipient: {type: Object, required: true},
+	deliverer: {type: Object, required: true},
 
 	drop_off_flexibility: {type: String, required: false}, // flexibility of the user that's putting the travel noting
 	pick_up_flexibility: {type: String, required: false} // flexibility of the user that's putting the travel noting
