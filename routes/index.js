@@ -176,7 +176,9 @@ router.post('/user_add', function (request, response, next) {
 		email: sf_req(request, "email", "new_user"),
 		location: "the best place on earth",
 		favorite_travel_place: "wherever has the cheapest flights",
-		suitcase_color: "rainbow"
+		suitcase_color: 9, // 9 is the index of rainbow
+		travel_notices_ids: [], // intialize both of these as empty arrays
+		requests_ids: [] // intialize both of these as empty arrays
 		// missing here: dob, phone, travel_notices_ids, requests_ids
 	});
 
@@ -1645,15 +1647,13 @@ router.get("/travel_notice_get", function (request, response, next) {
 
 	// get the required items to find this travel notice
 	let travelNoticeId = sf_req(request, "travel_notice_id", "travel_notice_get");
-	let tuid = sf_req(request, "tuid", "travel_notice_get");
 
-	if (isEmpty(travelNoticeId) || isEmpty(tuid)) {
-		callback(403, null, `Some of the parameters were not given. Travel notice id was: ${travelNoticeId}, tuid was: ${tuid}`, true);
+	if (isEmpty(travelNoticeId)) {
+		callback(403, null, `Some of the parameters were not given. Travel notice id was: ${travelNoticeId}`, true);
 	} else {
 		// perform the search
 		TravelNotice.findOne({
-			_id: travelNoticeId,
-			tuid: tuid
+			_id: travelNoticeId
 		}, function (error, data) {
 			if (error) {
 				callback(500, null, "Internal Server Error", error);
