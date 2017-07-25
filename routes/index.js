@@ -1437,7 +1437,7 @@ router.get("/request_get_to_me", function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* GET one users wants to see all the requests that people sent to him
- * curl -X GET http://localhost:3000/request_get_my
+ * curl -X GET http://localhost:3000/request_get?request_id=5977b33fc5264c00117e72f1
  * */
 router.get("/request_get", function (request, response, next) {
 	// callback for responding to send to user
@@ -1457,7 +1457,7 @@ router.get("/request_get", function (request, response, next) {
 	};
 
 	// set the uid of the user that is asking to see his requests
-	let request_id = sf_req(request, "uid", "request_get");
+	let request_id = sf_req(request, "request_id", "request_get");
 
 	ShippingRequest.findOne({_id: request_id}, function (findingError, requestFound) {
 		if (findingError) {
