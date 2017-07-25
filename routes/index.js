@@ -1438,20 +1438,21 @@ router.get("/request_get_to_me", function (request, response, next) {
 
 /* GET one users wants to see all the requests that people sent to him
  * curl -X GET http://localhost:3000/request_get?request_id=5977b33fc5264c00117e72f1
+ * curl -X GET http://localhost:3000/request_get?request_id=5977b33fc5264c00117e72f1
  * */
 router.get("/request_get", function (request, response, next) {
 	// callback for responding to send to user
-	let callback = function (status_, request_, message_, error_) {
+	let callback = function (status_, request_, tn_, message_, error_) {
 		response.setHeader('Content-Type', 'application/json');
 		response.status(status_);
 		let server_response;
 		if (error_) {
-			server_response = {success: false, data: null, message: message_, error: error_};
+			server_response = {success: false, request: request_, travel_notice:tn_, message: message_, error: error_};
 		} else if (isEmpty(request_)) {
 			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, data: null, message: message_, error: false};
+			server_response = {success: false, request: request_, travel_notice:tn_, message: message_, error: false};
 		} else {
-			server_response = {success: true, data: request_, message: message_, error: false};
+			server_response = {success: true, request: request_, travel_notice:tn_, message: message_, error: false};
 		}
 		response.send(JSON.stringify(server_response));
 	};
@@ -1459,13 +1460,28 @@ router.get("/request_get", function (request, response, next) {
 	// set the uid of the user that is asking to see his requests
 	let request_id = sf_req(request, "request_id", "request_get");
 
+	// function to find travel notice once request is found
+	let findTravelNotice = function(requestToSend){
+		TravelNotice.findOne({_id: requestToSend.travel_notice_id}, function(findingError, tnFound){
+			if (findingError) {
+				callback(500, null, null, "Internal Server error", findingError);
+			} else if (isEmpty(tnFound)) {
+				callback(404, null, null, "Request was found but no travel notice attached found", false);
+			} else {
+				callback(200, requestToSend, tnFound, "Found Request and Travel Notice", false);
+			}
+		});
+	};
+
 	ShippingRequest.findOne({_id: request_id}, function (findingError, requestFound) {
 		if (findingError) {
-			callback(500, null, "Internal Server error.", findingError);
+			callback(500, null, null, "Internal Server error.", findingError);
 		} else if (isEmpty(requestFound)) {
-			callback(404, null, "Request not found", true);
+			callback(404, null, null, "Request not found", true);
 		} else {
-			callback(200, requestFound, "Found", false);
+			// if we find the request, we need to look for the travel notice attached to it
+			findTravelNotice(requestFound);
+
 		}
 	});
 });
