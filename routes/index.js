@@ -1356,6 +1356,16 @@ router.get("/request_get_to_me", function (request, response, next) {
 
 	// initialize the list of requests to be sent to an empty list
 	let requestIDList = [];
+	function removeEmptyBracket(requestArray){
+		// trying to get rid of the empty brackets
+		let res = [];
+		for (let i = 0; i < requestArray.length; i++){
+			if (requestArray[i] !== "[]"){
+				res.push(requestArray[i]);
+			}
+		}
+		return res;
+	}
 
 	// set the uid of the user that is asking to see his requests
 	let uid = sf_req(request, "uid", "request_get_to_me");
@@ -1378,12 +1388,20 @@ router.get("/request_get_to_me", function (request, response, next) {
 							// server error, we should continue because it's minor ish
 							if (i >= userFound.travel_notices_ids.length - 1) {
 								// if we're at the end we make the final callback
-								callback(200, requestIDList, "list may be empty, minor error happened at findingErrorTN", false);
+								if (requestIDList.length === 0) {
+									callback(404, requestIDList, "list is empty, minor error happened at findingErrorTN", false);
+								} else {
+									callback(200, removeEmptyBracket(requestIDList), "success, but minor error happened at findingErrorTN", false);
+								}
 							}
 						} else if (isEmpty(travelNoticeFound)) {
 							if (i >= userFound.travel_notices_ids.length - 1) {
 								// if we're at the end we make the final callback
-								callback(200, requestIDList, "list may be empty, travel notices were empty", false);
+								if (requestIDList.length === 0) {
+									callback(404, requestIDList, "list is empty, travel notices were empty", false);
+								} else {
+									callback(200, removeEmptyBracket(requestIDList), "success, but travel notices were empty", false);
+								}
 							}
 						} else {
 							// if we find that request id, then we concatenate it into the list
@@ -1391,11 +1409,19 @@ router.get("/request_get_to_me", function (request, response, next) {
 								requestIDList = requestIDList.concat(travelNoticeFound.requests_ids);
 								if (i >= userFound.travel_notices_ids.length - 1) {
 									// if we're at the end we make the final callback
-									callback(200, requestIDList, "list may be empty", false);
+									if (requestIDList.length === 0) {
+										callback(404, requestIDList, "list is empty", false);
+									} else {
+										callback(200, removeEmptyBracket(requestIDList), "success", false);
+									}
 								}
 							} else if (i >= userFound.travel_notices_ids.length - 1) {
 								// if we're at the end we make the final callback
-								callback(200, requestIDList, "list may be empty", false);
+								if (requestIDList.length === 0) {
+									callback(404, requestIDList, "list is empty", false);
+								} else {
+									callback(200, removeEmptyBracket(requestIDList), "success", false);
+								}
 							}
 						}
 					});
@@ -1535,8 +1561,8 @@ router.post("/travel_notice_add", function (request, response, next) {
 		arr_hour: sf_req_int(request, "arr_hour", "travel_notice_add"),
 		arr_day: sf_req_int(request, "arr_day", "travel_notice_add"),
 		arr_month: sf_req_int(request, "arr_month", "travel_notice_add"),
-		arr_year: sf_req_int(request, "arr_year", "travel_notice_add"),
-		requests_ids: [] // this should be null (or an empty array) since it's a fresh new travel_notice
+		arr_year: sf_req_int(request, "arr_year", "travel_notice_add")
+		// requests_ids: [] this should be null (or an empty array) since it's a fresh new travel_notice
 	});
 
 	// place this in the database
