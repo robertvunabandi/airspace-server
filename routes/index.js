@@ -219,6 +219,7 @@ router.post('/user_add', function (request, response, next) {
 
 /* GET returns the id of the user requested by email
  * curl -X GET http://localhost:3000/user_get?email=test@test.test
+ * curl -X GET http://localhost:3000/user_get?uid=5977a6ca44f8d217b87f7819
  * */
 router.get('/user_get', function (request, response, next) {
 	// callback once we get the result
@@ -1331,8 +1332,9 @@ router.get("/request_get_my", function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* GET one users wants to see all the requests that people sent to him
- * curl -X GET http://localhost:3000/request_get_to_me?
- * curl -X GET http://localhost:3000/request_get_to_me?uid=5976c20e6e11f97eb93d8867
+ * curl -X GET http://localhost:3000/request_get_to_me?uid=5977a6ca44f8d217b87f7819
+ *
+ * curl -X GET http://localhost:3000/request_get_to_me?uid=5977a6ca44f8d217b87f7819
  * */
 router.get("/request_get_to_me", function (request, response, next) {
 
@@ -1371,7 +1373,6 @@ router.get("/request_get_to_me", function (request, response, next) {
 				callback(404, null, "No travel notice ever created by user", true);
 			} else {
 				for (let i = 0; i < userFound.travel_notices_ids.length; i++) {
-					console.log(i);
 					TravelNotice.findOne({_id: userFound.travel_notices_ids[i]}, function (findingErrorTN, travelNoticeFound) {
 						if (findingErrorTN) {
 							// server error, we should continue because it's minor ish
@@ -1379,7 +1380,7 @@ router.get("/request_get_to_me", function (request, response, next) {
 								// if we're at the end we make the final callback
 								callback(200, requestIDList, "list may be empty, minor error happened at findingErrorTN", false);
 							}
-						} else if (isEmpty(findingErrorTN)) {
+						} else if (isEmpty(travelNoticeFound)) {
 							if (i >= userFound.travel_notices_ids.length - 1) {
 								// if we're at the end we make the final callback
 								callback(200, requestIDList, "list may be empty, travel notices were empty", false);
