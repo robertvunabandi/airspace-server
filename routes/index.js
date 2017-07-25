@@ -151,7 +151,8 @@ router.get('/test', function (request, response, next) {
 
 /* POST new user into database
  * curl -X POST http://localhost:3000/user_add?f_name=temporary&l_name=user&email=temp@orary.user
- * curl -X POST http://localhost:3000/new_user?f_name=dumb&l_name=dumb&email=dumb@dumb.dumb&dob=ddmmyy&description=dumbdescription&phone=1111111111
+ * curl -X POST http://localhost:3000/user_add?f_name=dumb&l_name=dumb&email=dumb@dumb.dumb
+ *
  * */
 router.post('/user_add', function (request, response, next) {
 	// callback function to call at the end
@@ -767,8 +768,8 @@ router.get('/travels', function (request, response, next) {
 		url: `https://www.air-port-codes.com/api/v1/multi?term=${fromQuery}`,
 		method: "GET",
 		headers: {
-			"APC-Auth": "b76ea0b73d",
-			"APC-Auth-Secret": "24d1f18f24ef3a3"
+			"APC-Auth": "c301986eb3",
+			"APC-Auth-Secret": "4c4de6bc0ea3f5b"
 		}
 	};
 
@@ -776,8 +777,8 @@ router.get('/travels', function (request, response, next) {
 		url: `https://www.air-port-codes.com/api/v1/multi?term=${toQuery}`,
 		method: "GET",
 		headers: {
-			"APC-Auth": "b76ea0b73d",
-			"APC-Auth-Secret": "24d1f18f24ef3a3"
+			"APC-Auth": "c301986eb3",
+			"APC-Auth-Secret": "4c4de6bc0ea3f5b"
 		}
 	};
 	// variable to hold the airports and functions to get them
@@ -802,7 +803,12 @@ router.get('/travels', function (request, response, next) {
 			callback(502, null, "Internal Server Error", true);
 		} else {
 			airportsTo = JSON.parse(body_to).airports; // this should be an array of airports
-			REQUEST_HTTP(optionsFrom, callbackOnFrom);
+			if (body_to.statusCode === 401) {
+				// make a callback failure
+				callback(502, null, "API Key expired", true);
+			} else {
+				REQUEST_HTTP(optionsFrom, callbackOnFrom);
+			}
 		}
 	};
 
@@ -1475,7 +1481,7 @@ router.post("/request_delete", function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* POST add a travel notice to the database
- * curl -X POST http://localhost:3000/travel_notice_add?tuid=5967d57baf06e6606c442961&airline_iata=AA&airline_name=AmericanAirline&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_fragile=true&item_liquid=true&item_other=true&dep_airport_name=departurebrooooo&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=2001&arr_airport_name=THISISSOAIRPORTY&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=2499
+ * curl -X POST http://localhost:3000/travel_notice_add?tuid=5977a6de44f8d217b87f781a&airline_iata=AA&airline_name=AmericanAirline&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_fragile=true&item_liquid=true&item_other=true&dep_airport_name=departurebrooooo&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=2001&arr_airport_name=THISISSOAIRPORTY&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=2499
  * curl -X POST https://mysterious-headland-54722.herokuapp.com/travel_notice_add?tuid=5967d57baf06e6606c442961&airline_iata=AA&airline_name=AmericanAirline&flight_num=494&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_fragile=true&item_liquid=true&item_other=true&dep_airport_name=LOLDEPARTUREOTHEONE&dep_iata=TES&dep_city=TES&dep_min=1&dep_hour=1&dep_day=1&dep_month=1&dep_year=1&arr_airport_name=LOLARRIVALOTHERONE&arr_iata=TES&arr_city=TES&arr_min=1&arr_hour=1&arr_day=1&arr_month=1&arr_year=4
  * */
 router.post("/travel_notice_add", function (request, response, next) {
