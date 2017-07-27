@@ -184,7 +184,7 @@ router.post('/user_add', function (request, response, next) {
 	});
 
 	if (isEmpty(sf_req(request, "f_name", "new_user")) || isEmpty(sf_req(request, "l_name", "new_user")) || isEmpty(sf_req(request, "email", "new_user"))) {
-		callback(403, "Some or all of the parameters were not given", null, true);
+		callback(403, "Some or all of the parameters were not entered. Please enter all informations.", null, true);
 	} else {
 		/* check if user exists in database just by email first,
 		 if yes, send an error that user exists, if no, save that user */
@@ -203,13 +203,12 @@ router.post('/user_add', function (request, response, next) {
 						callback(201, "success", user_saved, false);
 					} else {
 						console.log(`REGISTRATION ERROR`, registration_error);
-						callback(500, "Internal Server Error", null, registration_error);
+						callback(500, "A registration error occurred. Some parameters may have been missing.", null, registration_error);
 					}
 				});
 			}
 		});
 	}
-
 });
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
@@ -362,7 +361,7 @@ router.get('/user_delete', function (request, response, next) {
  * curl -X POST http://localhost:3000/message_send
  **/
 router.post("/message_send", function (request, response, next) {
-	// message a user via chats
+	// message a user via chats TODO - May change based on socket for messaging
 
 	// callback once we get the result
 	let callback = function (status_, data_, message_, error_) {
@@ -725,7 +724,6 @@ router.get('/login', function (request, response, next) {
  * curl -X GET https://mysterious-headland-54722.herokuapp.com/travels?to=sat&from=sea&day_by=20&month_by=12&year_by=2018
  * */
 router.get('/travels', function (request, response, next) {
-	// TODO - ENDPOINT /travels INCOMPLETE, REMOVE 501 ON COMPLETION
 	/*
 	 curl -X GET https://mysterious-headland-54722.herokuapp.com/travels?to=Boston&from=San%20Francisco&day_by=41&month_by=4&year_by=2018
 	 curl -X GET http://localhost:3000/travels?to=Boston&from=San%20Francisco&day_by=41&month_by=4&year_by=2018
@@ -903,7 +901,7 @@ router.get('/travels', function (request, response, next) {
 			filtersOn = sf_req_bool(request, "filters_on", "travels");
 		}
 
-		if (filtersOn && false && TEMP.length <= 0) { // TODO - when filtering is done, remove the && false
+		if (filtersOn && false && TEMP.length <= 0) { // TODO (STRETCH) - when filtering is done, remove the && false
 			performSearchFiltering(TEMP);
 		} else {
 			// if res is empty here, we make a 404 callback
@@ -916,7 +914,7 @@ router.get('/travels', function (request, response, next) {
 	}
 
 	function performSearchFiltering(currentSearchResults) {
-		// TODO - do more filtering on RES based on filters
+		// TODO (STRETCH) - do more filtering on RES based on filters
 		callback(501, null, "Filtering not implemented"); // JUST FOR NOW
 	}
 });
@@ -1029,8 +1027,9 @@ router.post("/request_send", function (request, response, next) {
 						if (findingUSRError) {
 							callback(500, savedRequest, savedTn, "Error in findingUSRError", true);
 						} else if (isEmpty(userFound)) {
-							// TODO - Delete the saved request, this should never happen
-							callback(403, savedRequest, savedTn, "User was not found! Wth...", true);
+							// Delete the saved request, this should never happen
+							ShippingRequest.remove({_id: savedRequest._id});
+							callback(403, null, savedTn, "User was not found! Wth...", true);
 						} else {
 							// modify content
 							try {
@@ -1099,7 +1098,10 @@ router.post("/request_send", function (request, response, next) {
 					 the user that is sending this request. If that user has not sent a request
 					 to this travel notice, then his id cannot appear in this travel notice */
 					if (test_request.user_id == sf_req(request, "ruid", "request")) {
-						requestSent = true;
+						if (test_request.action === 0 || test_request.action === 1) {
+							// if the request is either pending or accepted, this request has already been sent
+							requestSent = true;
+						}
 					}
 					if (i >= tn.requests_ids.length - 1) {
 						if (!requestSent) {
@@ -1382,6 +1384,7 @@ router.get("/request_get_to_me", function (request, response, next) {
 				// if this uses made no travel notice, there
 				callback(404, null, "No travel notice ever created by user", true);
 			} else {
+				// TODO - Fix this for loop because some error happen
 				for (let i = 0; i < userFound.travel_notices_ids.length; i++) {
 					TravelNotice.findOne({_id: userFound.travel_notices_ids[i]}, function (findingErrorTN, travelNoticeFound) {
 						if (findingErrorTN) {
@@ -1597,7 +1600,7 @@ router.post("/travel_notice_add", function (request, response, next) {
 				if (findingUSRError) {
 					// delete the just saved travel notice
 					TravelNotice.remove({_id:savedTravelNotice._id});
-					callback(403, null, "Error at finding the new user (findingUSRError)", findingUSRError); // TODO - Say user error occurred and was not found
+					callback(403, null, "Error at finding the new user (findingUSRError), user associated was not found.", findingUSRError);
 				} else if (isEmpty(userFound)) {
 					// delete the just saved travel notice
 					TravelNotice.remove({_id:savedTravelNotice._id});
