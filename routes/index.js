@@ -130,6 +130,10 @@ function isEmpty(element) {
 	return element === null || element === undefined;
 }
 
+function isEmptyArray(array) {
+	return array.length === 0;
+}
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
@@ -753,14 +757,15 @@ router.get('/travels', function (request, response, next) {
 		}
 		response.send(JSON.stringify(server_response));
 	};
-
+	// get the id of the user
+	let _id_ = sf_req(request, "uid", "travels");
 	// get the from's and too's from the request with the dateby
 	let fromQuery = sf_req(request, "from", "travels");
 	let toQuery = sf_req(request, "to", "travels");
 	let dayBy = sf_req_int(request, "day_by", "travels");
 	let monthBy = sf_req_int(request, "month_by", "travels");
 	let yearBy = sf_req_int(request, "year_by", "travels");
-	let requestObject = {from: fromQuery, to: toQuery, day_by: dayBy, month_by: monthBy, year_by: yearBy};
+	let requestObject = {id: _id_, from: fromQuery, to: toQuery, day_by: dayBy, month_by: monthBy, year_by: yearBy};
 
 	// create the options for the requests and final variables
 	let optionsFrom = {
@@ -811,7 +816,7 @@ router.get('/travels', function (request, response, next) {
 		}
 	};
 
-	if (isEmpty(fromQuery) || isEmpty(toQuery) || isEmpty(dayBy) || isEmpty(monthBy) || isEmpty(yearBy)) {
+	if (isEmpty(fromQuery) || isEmpty(toQuery) || isEmpty(dayBy) || isEmpty(monthBy) || isEmpty(yearBy) || isEmpty(_id_)) {
 		// if any of those are empty, we can't perform search
 		callback(403, null, {
 			message: `Some or all of parameters were not specified. All parameters are required.`,
@@ -906,16 +911,43 @@ router.get('/travels', function (request, response, next) {
 		} else {
 			// if res is empty here, we make a 404 callback
 			if (TEMP.length <= 0) {
-				callback(404, null, "No travel notice found. please modify search queries.", false); // JUST FOR NOW
+				callback(404, null, "No travel notice found. please modify search queries.", false);
 			} else {
-				callback(200, TEMP, "Results found!", false);
+				performRulingOutUser(TEMP);
 			}
 		}
 	}
 
+	let performRulingOutUser = function (listTravelNotices) {
+		// removes any travel notice sent by the person directly making the search
+		let res = [];
+		for (let i = 0; i < listTravelNotices.length; i++) {
+			if (listTravelNotices[i].tuid !== _id_) {
+				res.push(listTravelNotices[i]);
+				if (i >= listTravelNotices.length - 1) {
+					sendResults(res);
+				}
+			} else if (i >= listTravelNotices.length - 1) {
+				sendResults(res);
+
+			}
+		}
+	};
+
+	let sendResults = function (resultRuled) {
+		// sends the results by first checking if the result is empty, if it is, send a 404, otherwise send it
+		if (resultRuled.length <= 0) {
+			callback(404, null, "No travel notice found. please modify search queries.", false);
+		} else {
+			callback(200, resultRuled, "Results found!", false);
+		}
+
+	};
+
 	function performSearchFiltering(currentSearchResults) {
 		// TODO (STRETCH) - do more filtering on RES based on filters
 		callback(501, null, "Filtering not implemented"); // JUST FOR NOW
+		// at the end, do performRulingOutUser(TEMP);
 	}
 });
 
@@ -1358,11 +1390,12 @@ router.get("/request_get_to_me", function (request, response, next) {
 
 	// initialize the list of requests to be sent to an empty list
 	let requestIDList = [];
-	function removeEmptyBracket(requestArray){
+
+	function removeEmptyBracket(requestArray) {
 		// trying to get rid of the empty brackets
 		let res = [];
-		for (let i = 0; i < requestArray.length; i++){
-			if (requestArray[i] !== "[]"){
+		for (let i = 0; i < requestArray.length; i++) {
+			if (requestArray[i] !== "[]") {
 				res.push(requestArray[i]);
 			}
 		}
@@ -1450,12 +1483,12 @@ router.get("/request_get", function (request, response, next) {
 		response.status(status_);
 		let server_response;
 		if (error_) {
-			server_response = {success: false, request: request_, travel_notice:tn_, message: message_, error: error_};
+			server_response = {success: false, request: request_, travel_notice: tn_, message: message_, error: error_};
 		} else if (isEmpty(request_)) {
 			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, request: request_, travel_notice:tn_, message: message_, error: false};
+			server_response = {success: false, request: request_, travel_notice: tn_, message: message_, error: false};
 		} else {
-			server_response = {success: true, request: request_, travel_notice:tn_, message: message_, error: false};
+			server_response = {success: true, request: request_, travel_notice: tn_, message: message_, error: false};
 		}
 		response.send(JSON.stringify(server_response));
 	};
@@ -1464,8 +1497,8 @@ router.get("/request_get", function (request, response, next) {
 	let request_id = sf_req(request, "request_id", "request_get");
 
 	// function to find travel notice once request is found
-	let findTravelNotice = function(requestToSend){
-		TravelNotice.findOne({_id: requestToSend.travel_notice_id}, function(findingError, tnFound){
+	let findTravelNotice = function (requestToSend) {
+		TravelNotice.findOne({_id: requestToSend.travel_notice_id}, function (findingError, tnFound) {
 			if (findingError) {
 				callback(500, null, null, "Internal Server error", findingError);
 			} else if (isEmpty(tnFound)) {
@@ -1596,17 +1629,17 @@ router.post("/travel_notice_add", function (request, response, next) {
 		} else {
 			// if savedTravelNotice is null, then send it
 			// first find the user
-			User.findOne({_id: sf_req(request, "tuid", "travel_notice_add")}, function(findingUSRError, userFound){
+			User.findOne({_id: sf_req(request, "tuid", "travel_notice_add")}, function (findingUSRError, userFound) {
 				if (findingUSRError) {
 					// delete the just saved travel notice
-					TravelNotice.remove({_id:savedTravelNotice._id});
+					TravelNotice.remove({_id: savedTravelNotice._id});
 					callback(403, null, "Error at finding the new user (findingUSRError), user associated was not found.", findingUSRError);
 				} else if (isEmpty(userFound)) {
 					// delete the just saved travel notice
-					TravelNotice.remove({_id:savedTravelNotice._id});
+					TravelNotice.remove({_id: savedTravelNotice._id});
 					callback(403, null, "User is empty or not saved in the database. This is not allowed.", true);
 				} else {
-					let userSavingFunction = function() {
+					let userSavingFunction = function () {
 						// function to save the user
 						userFound.save(function (savingError, userSaved) {
 							if (savingError) {
@@ -1781,6 +1814,66 @@ router.get("/travel_notice_get", function (request, response, next) {
 	}
 });
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* GET gets one travel notice from the DB
+ * curl -X GET http://localhost:3000/travel_notice_get_mine?uid=597a1df9f10e810011c055b8
+ * */
+router.get("/travel_notice_get_mine", function (request, response, next) {
+	// callback once we get the result
+	let callback = function (status_, travel_notice_array_, message_, error_) {
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_) {
+			server_response = {success: false, data: null, message: message_, error: error_};
+		} else if (isEmpty(travel_notice_array_)) {
+			// if we get to here that means travel_notice_ is not empty
+			server_response = {success: false, data: null, message: message_, error: false};
+		} else {
+			server_response = {success: true, data: travel_notice_array_, message: message_, error: false};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+
+	// get id in the request
+	let _id_ = sf_req(request, "uid", "travel_notice_get_mine");
+	if (isEmpty(_id_)) {
+		callback(403, null, "Id not specified in parameters", true);
+	} else {
+		// find all the travel notice and rule out those that don't belong to the specified user
+		TravelNotice.find({}, function (findingError, foundTns) {
+			if (findingError) {
+			} else if (isEmpty(foundTns)) {
+			} else {
+				let result = [];
+				for (let i = 0; i < foundTns.length; i++) {
+					if (foundTns[i].tuid === _id_) {
+						result.push(foundTns[i]);
+						if (i >= foundTns.length - 1) {
+							sendResult(result);
+						}
+					} else if (i >= foundTns.length - 1) {
+						sendResult(result);
+					}
+				}
+			}
+		});
+	}
+
+	// send a 404 if the array is empty, otherwise send it
+	let sendResult = function(arrayList) {
+		if (isEmptyArray(arrayList)) {
+			callback(404, null, "You have no travel notice created yet", false);
+		} else {
+			callback(200, arrayList, "Success", false);
+		}
+	}
+});
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
@@ -1791,18 +1884,21 @@ router.get("/travel_notice_get", function (request, response, next) {
  * curl -X POST http://localhost:3000/travel_notice_delete?tuid=5967d57baf06e6606c442961&travel_notice_uid=<PLACE HERE>
  * */
 router.post("/travel_notice_delete", function (request, response, next) {
+	// TODO - Make it update everywhere accordingly
 
 	// callback once we get the result
-	let callback = function (status, data, error) {
-		// TODO - modify to add messages
+	// callback once we get the result
+	let callback = function (status_, travel_notice_, message_, error_) {
 		response.setHeader('Content-Type', 'application/json');
-		response.status(status);
+		response.status(status_);
 		let server_response;
-		if (error) {
-			server_response = {success: false, data: null, error: error};
-		}
-		else {
-			server_response = {success: true, data: data, error: false};
+		if (error_) {
+			server_response = {success: false, data: null, message: message_, error: error_};
+		} else if (travel_notice_ === null) {
+			// if we get to here that means travel_notice_ is not empty
+			server_response = {success: false, data: null, message: message_, error: false};
+		} else {
+			server_response = {success: true, data: travel_notice_, message: message_, error: false};
 		}
 		response.send(JSON.stringify(server_response));
 	};
@@ -1811,18 +1907,19 @@ router.post("/travel_notice_delete", function (request, response, next) {
 	let id = sf_req(request, "travel_notice_uid", "travel_notice_delete");
 	let tuid = sf_req(request, "tuid", "travel_notice_delete");
 
-	TravelNotice.remove({_id: id, tuid: tuid}, function (error, data) {
-		if (error) {
-			// if there is an error, that means we didn't find it
-			callback(500, null, error);
-		} else if (data["n"] >= 1) {
-			// if we deleted at least one item, then make a successful callback
-			callback(202, data, false);
-		} else {
-			// otherwise, that means this travel notice didn't exist so return a 404 error
-			callback(404, data, true);
-		}
-	});
+	callback(501, null, "Not Implemented", false);
+	/* TravelNotice.remove({_id: id, tuid: tuid}, function (error, data) {
+	 if (error) {
+	 // if there is an error, that means we didn't find it
+	 callback(500, null, error);
+	 } else if (data["n"] >= 1) {
+	 // if we deleted at least one item, then make a successful callback
+	 callback(202, data, false);
+	 } else {
+	 // otherwise, that means this travel notice didn't exist so return a 404 error
+	 callback(404, data, true);
+	 }
+	 }); */
 });
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
