@@ -35,7 +35,9 @@ const TravelNotice = new Schema({
 	arr_month: {type: Number, required: true}, // month of flight
 	arr_year: {type: Number, required: true}, // year of flight
 
-	requests_ids: {type: Array, required: false}
+	requests_ids: {type: Array, required: false},
+	pending_requests_count: {type: Number, required: true},
+	accepted_requests_count: {type: Number, required: true}
 });
 
 

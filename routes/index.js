@@ -29,6 +29,7 @@ const router = express.Router();
 const User = require('../schemas/user.js');
 const TravelNotice = require('../schemas/travel_notice.js');
 const ShippingRequest = require('../schemas/request.js');
+const Notification = require('../schemas/notification.js');
 const MessageCreator = require('../schemas/message.js');
 
 // helpers
@@ -37,11 +38,6 @@ const helpers = require('../helpers.js');
 // to make http calls
 const http = require('http');
 const REQUEST_HTTP = require('request');
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* three debugging functions */
 const LOG = {
@@ -147,8 +143,132 @@ router.get('/test', function (request, response, next) {
 	response.send(JSON.stringify({numbers: [0, 1, 2, 3, 4, 5, 6], names: ["Ruben", "Amanda", "Robert"]}));
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* GET new user into database
+ * curl -X POST http://localhost:3000/notifications_add?uid=<id>
+ *
+ * */
+router.post('/notifications_add', function (request, response, next) {
+	// callback function to call at the end
+	let callback = function (status_, savedNotification_, message_, error_) {
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_ !== false) {
+			server_response = {success: false, message: message_, data: null, error: error_};
+		} else if (isEmpty(savedNotification_)) {
+			server_response = {success: false, message: message_, data: null, error: false};
+		} else {
+			server_response = {success: true, message: message_, data: savedNotification_, error: false};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+	let n = new Notification({
+		user_id: "test",
+		message: "test notification",
+		sent: false,
+		date_received: helpers.newDate(),
+		action: 999
+	});
+
+	n.save(function (savingError, savedN) {
+		if (savingError) {
+			callback(500, null, "Internal Server Error", savingError);
+		} else {
+			callback(200, savedN, "Saved", false);
+		}
+	});
+});
+/* GET new user into database
+ * curl -X GET http://localhost:3000/notifications_get?uid=test
+ *
+ * */
+router.get('/notifications_get', function (request, response, next) {
+	// callback function to call at the end
+	let callback = function (status_, notificationArray_, message_, error_) {
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_ !== false) {
+			server_response = {success: false, message: message_, data: null, error: error_};
+		} else if (isEmpty(notificationArray_)) {
+			server_response = {success: false, message: message_, data: null, error: false};
+		} else {
+			server_response = {success: true, message: message_, data: notificationArray_, error: false};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+
+	let user_id = sf_req(request, "uid", "notifications_get");
+	// get all the notifications that belong to this user
+
+	if (isEmpty(user_id)) {
+		callback(403, null, "User id not specified!", true);
+	} else {
+		Notification.find({user_id: user_id}, function (findingError, foundNotifications) {
+			if (findingError) {
+				callback(500, null, "Internal Server Error", findingError);
+			} else if (isEmpty(foundNotifications)) {
+				callback(404, null, "You have no notifications.", false);
+			} else {
+				sendResult(foundNotifications);
+			}
+		});
+	}
+
+	// send a 404 if the array is empty, otherwise send it
+	let sendResult = function (arrayList) {
+		if (isEmptyArray(arrayList)) {
+			callback(404, null, "You have no notifications.", false);
+		} else {
+			callback(200, arrayList, "New notifications", false);
+			for (let i = 0; i < arrayList.length; i++) {
+				arrayList[i].sent = true;
+				arrayList[i].save();
+			}
+		}
+	};
+});
+
+/* POST new user into database
+ * curl -X POST http://localhost:3000/notifications_delete_one?_id=597b828bef260f962a51c029
+ *
+ * */
+router.post('/notifications_delete_one', function (request, response, next) {
+	// callback function to call at the end
+	let callback = function (status_, notificationDeleted_, message_, error_) {
+		response.setHeader('Content-Type', 'application/json');
+		response.status(status_);
+		let server_response;
+		if (error_ !== false) {
+			server_response = {success: false, message: message_, data: null, error: error_};
+		} else if (status_ != 200) {
+			server_response = {success: false, message: message_, data: notificationDeleted_, error: false};
+		} else {
+			server_response = {success: true, message: message_, data: notificationDeleted_, error: false};
+		}
+		response.send(JSON.stringify(server_response));
+	};
+
+	let notification_id = sf_req(request, "_id", "notifications_get");
+
+	// delete the notification found by id
+	if (isEmpty(notification_id)) {
+		callback(403, null, "Id not specified!", true);
+	} else {
+		Notification.remove({_id: notification_id}, function (deletionError, deletedNotification) {
+			if (deletionError) {
+				callback(500, null, "Internal Server Error", deletionError);
+			} else {
+				callback(200, deletedNotification, "Notification deleted", false);
+			}
+		});
+	}
+});
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -365,6 +485,7 @@ router.get('/user_delete', function (request, response, next) {
  * curl -X POST http://localhost:3000/message_send
  **/
 router.post("/message_send", function (request, response, next) {
+	// TODO - Make sure to fix notifications
 	// message a user via chats TODO - May change based on socket for messaging
 
 	// callback once we get the result
@@ -494,6 +615,7 @@ router.post("/message_send", function (request, response, next) {
  * curl -X GET http://localhost:3000/message_get_all?suid=<SUID>&ruid=<RUID>
  * */
 router.get('/message_get_all', function (request, response, next) {
+	// TODO - Make sure to fix also notifications
 	// callback once we get the result
 	let callback = function (status_, data_, message_, error_) {
 		// callback for responding to send to user
@@ -551,6 +673,7 @@ router.get('/message_get_all', function (request, response, next) {
  * curl -X GET http://localhost:3000/message_get_unread?suid=<SUID>&ruid=<RUID>
  * */
 router.get('/message_get_unread', function (request, response, next) {
+	// TODO - Fix with notifications
 	// callback once we get the result
 	let callback = function (status_, data_, message_, error_) {
 		// callback for responding to send to user
@@ -1075,6 +1198,18 @@ router.post("/request_send", function (request, response, next) {
 								} else {
 									// final callback
 									callback(201, savedRequest, savedTn, "Saved successfully", false);
+
+									let n = new Notification({
+										user_id: userFound._id,
+										message: "You received a new request", // TODO - Add a from user name
+										sent: false, // TODO - Ideal: add a code so that we know what to do with this request
+										date_received: helpers.newDate(),
+										travel_notice_from_id: savedTn._id,
+										request_from_id: savedRequest._id,
+										user_from_id: ruid,
+										action: 10
+									});
+									n.save();
 								}
 							});
 						}
@@ -1095,6 +1230,7 @@ router.post("/request_send", function (request, response, next) {
 							try {
 								// the array be not be initialized so we do a try catch. However, it should be initialized!
 								tn.requests_ids.push(rs_add);
+								tn.pending_requests_count += 1; // add to the pending request count
 								tn.save(function (tnSavingError, newTN) {
 									if (tnSavingError) {
 										callback(500, null, null, "Error in tnSavingError", tnSavingError);
@@ -1198,7 +1334,7 @@ router.post("/request_accept", function (request, response, next) {
 		} else if (isEmpty(shippingRequest)) {
 			callback(404, null, null, "Request not found", false);
 		} else {
-			shippingRequest.status = 1; // status
+			shippingRequest.status = 1; // change status to 1
 			// confirm that the user has this travelnotice by checking that the id of the request is in the travel notice
 			TravelNotice.findOne({_id: travel_notice_id}, function (findingTVLError, travelNotice) {
 				if (findingTVLError) {
@@ -1206,6 +1342,30 @@ router.post("/request_accept", function (request, response, next) {
 				} else if (isEmpty(shippingRequest)) {
 					callback(403, null, null, "Travel notice not found", false);
 				} else {
+					// fix the pending and accepted count
+					let fixPendingAndAcceptedCount = function (savedReq) {
+						travelNotice.pending_requests_count -= 1;
+						travelNotice.accepted_requests_count += 1;
+						travelNotice.save(function (savingError, savedTn) {
+							if (savingError) {
+								callback(500, savedReq, travelNotice, "Error while updating the travel notice. Travel notice was found however.", savingError);
+							} else {
+								callback(201, savedReq, savedTn, "Request accepted", false);
+								let n = new Notification({
+									user_id: savedReq.ruid,
+									message: "Your request has been accepted!", // TODO - Add a to user name
+									sent: false, // TODO - Ideal: add a code so that we know what to do with this request
+									date_received: helpers.newDate(),
+									travel_notice_from_id: savedTn._id,
+									request_from_id: savedReq._id,
+									user_from_id: savedTn.tuid,
+									action: 11
+								});
+								n.save();
+							}
+						});
+					};
+
 					// check if request_id is in this travel notice
 					for (let i = 0; i < travelNotice.requests_ids.length; i++) {
 						let test_request = travelNotice.requests_ids[i];
@@ -1215,7 +1375,7 @@ router.post("/request_accept", function (request, response, next) {
 								if (savingError) {
 									callback(500, null, travelNotice, "Error while saving the request. Travel notice was found however", savingError);
 								} else {
-									callback(201, savedRequest, travelNotice, "Request accepted", false);
+									fixPendingAndAcceptedCount(savedRequest);
 								}
 							});
 							break;
@@ -1284,6 +1444,29 @@ router.post("/request_decline", function (request, response, next) {
 				} else if (isEmpty(shippingRequest)) {
 					callback(403, null, null, "Travel notice not found", false);
 				} else {
+					// fix the pending and accepted count
+					let fixPendingAndAcceptedCount = function (savedReq) {
+						travelNotice.pending_requests_count -= 1;
+						travelNotice.save(function (savingError, savedTn) {
+							if (savingError) {
+								callback(500, savedReq, travelNotice, "Error while updating the travel notice. Travel notice was found however.", savingError);
+							} else {
+								callback(201, savedReq, savedTn, "Request declined", false); // **SUCCESS-CALL**
+								let n = new Notification({
+									user_id: savedReq.ruid,
+									message: "Your request has been declined :(", // TODO - Add a to user name
+									sent: false, // TODO - Ideal: add a code so that we know what to do with this request
+									date_received: helpers.newDate(),
+									travel_notice_from_id: savedTn._id,
+									request_from_id: savedReq._id,
+									user_from_id: savedTn.tuid,
+									action: 12
+								});
+								n.save();
+							}
+						});
+					};
+
 					// check if request_id is in this travel notice
 					for (let i = 0; i < travelNotice.requests_ids.length; i++) {
 						let test_request = travelNotice.requests_ids[i];
@@ -1293,7 +1476,7 @@ router.post("/request_decline", function (request, response, next) {
 								if (savingError) {
 									callback(500, null, travelNotice, "Error while saving the request. Travel notice was found however", savingError);
 								} else {
-									callback(201, savedRequest, travelNotice, "Request accepted", false);
+									fixPendingAndAcceptedCount(savedRequest);
 								}
 							});
 							break;
@@ -1314,7 +1497,7 @@ router.post("/request_decline", function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* GET one users wants to see all the requests that he has sent
- * curl -X GET http://localhost:3000/request_get_my
+ * curl -X GET http://localhost:3000/request_get_my?uid=597a7f0699c6c400113ee2a1
  *
  * */
 router.get("/request_get_my", function (request, response, next) {
@@ -1335,29 +1518,29 @@ router.get("/request_get_my", function (request, response, next) {
 		response.send(JSON.stringify(server_response));
 	};
 
-	// initialize the list of requests to be sent to an empty list
-	let requestList = [];
-
 	// set the uid of the user that is asking to see his requests
 	let uid = sf_req(request, "uid", "request_get_my");
 
 	// find all requests and rule out those that are bad
-	ShippingRequest.find({}, function (findingError, requests) {
+	ShippingRequest.find({ruid: uid}, function (findingError, requests) {
 		if (findingError) {
 			callback(500, null, "Internal Server Error at findingError", findingError);
 		} else if (isEmpty(requests)) {
 			callback(404, null, "No requests found", true);
 		} else {
-			for (let i = 0; i < requests.length; i++) {
-				if (requests[i].ruid === uid) {
-					requestList.push(requests[i]);
-				}
-				if (i >= requests.length - 1) {
-					callback(200, requestList, "Request found may be empty", false);
-				}
-			}
+			// send result if requests is not empty
+			sendResult(requests);
 		}
 	});
+
+	// send a 404 if the array is empty, otherwise send it
+	let sendResult = function (arrayList) {
+		if (isEmptyArray(arrayList)) {
+			callback(404, null, "You have not sent a request yet.", false);
+		} else {
+			callback(200, arrayList, "Success", false);
+		}
+	};
 });
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -1551,6 +1734,14 @@ router.post("/request_delete", function (request, response, next) {
 		response.send(JSON.stringify(server_response));
 	};
 
+	// get the request
+	// ShippingRequest.findOne();
+
+	// get the travel notice and remove it in the tn
+
+	// get the user and remove it in user
+
+	// remove the request
 	callback(501, null, null, "Not implemented", true);
 });
 
@@ -1613,7 +1804,9 @@ router.post("/travel_notice_add", function (request, response, next) {
 		arr_hour: sf_req_int(request, "arr_hour", "travel_notice_add"),
 		arr_day: sf_req_int(request, "arr_day", "travel_notice_add"),
 		arr_month: sf_req_int(request, "arr_month", "travel_notice_add"),
-		arr_year: sf_req_int(request, "arr_year", "travel_notice_add")
+		arr_year: sf_req_int(request, "arr_year", "travel_notice_add"),
+		pending_requests_count: 0, // when we just create a fresh new travel notice, we don't have any request to it
+		accepted_requests_count: 0
 		// requests_ids: [] this should be null (or an empty array) since it's a fresh new travel_notice
 	});
 
@@ -1820,9 +2013,11 @@ router.get("/travel_notice_get", function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* GET gets one travel notice from the DB
- * curl -X GET http://localhost:3000/travel_notice_get_mine?uid=597a1df9f10e810011c055b8
+ * curl -X GET http://localhost:3000/travel_notice_get_mine?uid=597922c81527c200110fc33e
  * */
 router.get("/travel_notice_get_mine", function (request, response, next) {
+	// returns all the travel notices that the user (specified by uid) has sent to people
+
 	// callback once we get the result
 	let callback = function (status_, travel_notice_array_, message_, error_) {
 		response.setHeader('Content-Type', 'application/json');
@@ -1842,36 +2037,28 @@ router.get("/travel_notice_get_mine", function (request, response, next) {
 	// get id in the request
 	let _id_ = sf_req(request, "uid", "travel_notice_get_mine");
 	if (isEmpty(_id_)) {
-		callback(403, null, "Id not specified in parameters", true);
+		callback(403, null, "Id not specified in parameters.", true);
 	} else {
 		// find all the travel notice and rule out those that don't belong to the specified user
-		TravelNotice.find({}, function (findingError, foundTns) {
+		TravelNotice.find({tuid: _id_}, function (findingError, foundTns) {
 			if (findingError) {
+				callback(500, null, "Internal Server Error", findingError);
 			} else if (isEmpty(foundTns)) {
+				callback(404, null, "You either have no travel notice created yet.", false);
 			} else {
-				let result = [];
-				for (let i = 0; i < foundTns.length; i++) {
-					if (foundTns[i].tuid === _id_) {
-						result.push(foundTns[i]);
-						if (i >= foundTns.length - 1) {
-							sendResult(result);
-						}
-					} else if (i >= foundTns.length - 1) {
-						sendResult(result);
-					}
-				}
+				sendResult(foundTns);
 			}
 		});
 	}
 
 	// send a 404 if the array is empty, otherwise send it
-	let sendResult = function(arrayList) {
+	let sendResult = function (arrayList) {
 		if (isEmptyArray(arrayList)) {
-			callback(404, null, "You have no travel notice created yet", false);
+			callback(404, null, "You have no travel notice created yet.", false);
 		} else {
 			callback(200, arrayList, "Success", false);
 		}
-	}
+	};
 });
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 

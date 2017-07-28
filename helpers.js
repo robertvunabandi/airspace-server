@@ -13,6 +13,7 @@ let helpers = {
 	newDate: function(){
 		let monthStrings = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 		let d = new Date(Date.now());
+		d.setTime(d.getTime() + d.getTimezoneOffset()*60*1000);
 		return {
 			day: d.getUTCDate() - 1,
 			month: d.getUTCMonth(),
