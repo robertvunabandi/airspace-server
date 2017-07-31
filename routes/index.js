@@ -125,6 +125,9 @@ function isEmpty(element) {
 	// returns a boolean of whether this element is empty
 	return element === null || element === undefined;
 }
+function isANumber(element){
+	return (typeof(element) !== "object") && !isNaN(element) && (typeof(element) === 'number' || (typeof(parseInt(element)) === 'number' && !isNaN(parseInt(element))));
+};
 
 function isEmptyArray(array) {
 	return array.length === 0;
@@ -1211,8 +1214,8 @@ router.get('/travels_all', function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* POST send or receive request
- * curl -X POST http://localhost:3000/request
- * curl -X POST http://localhost:3000/request?travel_notice_id=596a79585749ad1f3b77234b&ruid=5967d57baf06e6606c442961&item_envelopes=true&item_smbox=false&item_lgbox=false&item_clothing=false&item_other=false&item_total=1&sending=false&receiving=false
+ * curl -X POST http://localhost:3000/request_send?travel_notice_id=
+ * curl -X POST http://localhost:3000/request_send?travel_notice_id=596a79585749ad1f3b77234b&ruid=5967d57baf06e6606c442961&item_envelopes=true&item_smbox=false&item_lgbox=false&item_clothing=false&item_other=false&item_total=1&sending=false&receiving=false
  * */
 router.post("/request_send", function (request, response, next) {
 	/* send or receive request sent to a specific user from query
@@ -1309,6 +1312,7 @@ router.post("/request_send", function (request, response, next) {
 				// create a function for saving this request to the user's lists of requests
 				let save_request_to_user = function (savedRequest, savedTn) {
 					// find the user
+					LOG.e("HERE 2");
 					User.findOne({_id: ruid}, function (findingUSRError, userFound) {
 						if (findingUSRError) {
 							callback(500, savedRequest, savedTn, "Error in findingUSRError", true);
@@ -1359,9 +1363,10 @@ router.post("/request_send", function (request, response, next) {
 								request_id: request_saved._id.valueOf()
 							};
 							try {
+								let currentCount = isEmpty(tn.pending_requests_count) || isANumber(tn.pending_requests_count) ? 0 : tn.pending_requests_count;
 								// the array be not be initialized so we do a try catch. However, it should be initialized!
 								tn.requests_ids.push(rs_add);
-								tn.pending_requests_count += 1; // add to the pending request count
+								tn.pending_requests_count = 1 + currentCount; // add to the pending request count
 								tn.save(function (tnSavingError, newTN) {
 									if (tnSavingError) {
 										callback(500, null, null, "Error in tnSavingError", tnSavingError);
@@ -1372,8 +1377,10 @@ router.post("/request_send", function (request, response, next) {
 
 							} catch (err) {
 								console.log("ERROR IN tn.requests_ids_push", err);
+								let currentCount = isEmpty(tn.pending_requests_count) || isANumber(tn.pending_requests_count) ? 0 : tn.pending_requests_count;
 								tn.requests_ids = [];
 								tn.requests_ids.push(rs_add);
+								tn.pending_requests_count = 1 + currentCount; // add to the pending request count
 								tn.save(function (tnSavingError, newTN) {
 									if (tnSavingError) {
 										callback(500, null, null, "Error in tnSavingError", tnSavingError);
@@ -1391,29 +1398,33 @@ router.post("/request_send", function (request, response, next) {
 
 				// then, first check if this request is already saved
 				let requestSent = false;
-				for (let i = 0; i < tn.requests_ids.length; i++) {
-					let test_request = tn.requests_ids[i];
-					/* here, we're checking if the specific travel_notice being requested contains
-					 the user that is sending this request. If that user has not sent a request
-					 to this travel notice, then his id cannot appear in this travel notice */
-					if (test_request.user_id == sf_req(request, "ruid", "request")) {
-						if (test_request.action === 0 || test_request.action === 1) {
-							// if the request is either pending or accepted, this request has already been sent
-							requestSent = true;
+				if (tn.requests_ids.length > 0) {
+					for (let i = 0; i < tn.requests_ids.length; i++) {
+						let test_request = tn.requests_ids[i];
+						/* here, we're checking if the specific travel_notice being requested contains
+						 the user that is sending this request. If that user has not sent a request
+						 to this travel notice, then his id cannot appear in this travel notice */
+						if (test_request.user_id == sf_req(request, "ruid", "request")) {
+							if (test_request.action === 0 || test_request.action === 1) {
+								// if the request is either pending or accepted, this request has already been sent
+								requestSent = true;
+							}
+						}
+						if (i >= tn.requests_ids.length - 1) {
+							if (!requestSent) {
+								// if i is the last index and the request has not been sent, save it
+								save_request_to_tn();
+								// we wait for the last index because of NodeJS's a-synchronousness
+							} else {
+								callback(403, null, null, "Request has already been sent", true);
+							}
+						} else if (requestSent) {
+							// else move to last index to speed it up
+							i = tn.requests_ids.length - 2;
 						}
 					}
-					if (i >= tn.requests_ids.length - 1) {
-						if (!requestSent) {
-							// if i is the last index and the request has not been sent, save it
-							save_request_to_tn();
-							// we wait for the last index because of NodeJS's a-synchronousness
-						} else {
-							callback(403, null, null, "Request has already been sent", true);
-						}
-					} else if (requestSent) {
-						// else move to last index to speed it up
-						i = tn.requests_ids.length - 2;
-					}
+				} else {
+					save_request_to_tn();
 				}
 			}
 		});
