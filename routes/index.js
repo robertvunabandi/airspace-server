@@ -1664,6 +1664,7 @@ router.get("/request_get_from_travel_notice", function (request, response, next)
 	// find the requests for this travel notice
 	let findAllRequestsForTn = function(foundTravelNotice) {
 		// assumes foundTravelNotice is not empty
+		LOG.i(foundTravelNotice);
 		ShippingRequest.find({}, function(findingError, foundSRs) {
 			if (findingError) {
 				callback(500, null, null, "Internal Server Error", findingError);
@@ -1677,10 +1678,10 @@ router.get("/request_get_from_travel_notice", function (request, response, next)
 						// if the request at index i's travel_notice_id equals the foundTN's id, we add it to RES
 						RES.push(foundSRs[i]);
 						if (i >= foundSRs.length - 1) {
-							sendResults(RES);
+							sendResults(RES, foundTravelNotice);
 						}
 					} else if (i >= foundSRs.length - 1) {
-						sendResults(RES);
+						sendResults(RES, foundTravelNotice);
 					}
 				}
 			}
