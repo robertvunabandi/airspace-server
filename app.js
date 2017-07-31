@@ -28,9 +28,7 @@ const DBS = [DB_EXTERNAL_URL, DB_LOCAL_URL];
 // CONNECT IN SHELL: mongo ds034807.mlab.com:34807/rawr_db -u rawr_db -p rveIisZqYV
 
 // 0:external:0, 1:local:1
-let promise = mongoose.connect(DBS[0], {
-    useMongoClient: true
-});
+let promise = mongoose.connect(DBS[0], { useMongoClient: true });
 
 // connect mongoose to that same database
 // mongoose.connect(process.env.MONGOLAB_URI || 'mongodb://localhost:27017/RAWR');
