@@ -1425,7 +1425,7 @@ router.post("/request_send", function (request, response, next) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* POST send or receive request, changes status from 0 to 1
- * curl -X POST http://localhost:3000/request_accept
+ * curl -X POST http://localhost:3000/request_accept?
  *
  * */
 router.post("/request_accept", function (request, response, next) {
@@ -1499,8 +1499,9 @@ router.post("/request_accept", function (request, response, next) {
 
 					// check if request_id is in this travel notice
 					for (let i = 0; i < travelNotice.requests_ids.length; i++) {
-						let test_request = travelNotice.requests_ids[i];
-						if (test_request.request_id == request_id) {
+						let test_request_id = travelNotice.requests_ids[i].request_id.valueOf();
+						console.log(`${test_request_id} ${request_id} ${test_request_id == request_id}`);
+						if (test_request_id == request_id) {
 							// save the request if we find it
 							shippingRequest.save(function (savingError, savedRequest) {
 								if (savingError) {
@@ -1510,8 +1511,7 @@ router.post("/request_accept", function (request, response, next) {
 								}
 							});
 							break;
-						}
-						if (i >= travelNotice.requests_ids.length - 1) {
+						} else if (i >= travelNotice.requests_ids.length - 1) {
 							callback(403, null, null, "Request not found in Travel notice", true);
 						}
 					}
