@@ -12,7 +12,7 @@ const helpers = require('../helpers.js');
 /* debugging functions */
 const LOG = helpers.LOG; const log_separator = helpers.log_separator; const log_requested_items = helpers.log_requested_items;
 const sf_req = helpers.sf_req; const sf_req_bool = helpers.sf_req_bool; const sf_req_int = helpers.sf_req_int;
-const isEmpty = helpers.isEmpty; const isEmptyArray = helpers.isEmptyArray;
+const isEmpty = helpers.isEmpty; const isEmptyArray = helpers.isEmptyArray; const isANumber = helpers.isANumber;
 
 /* POST new user into database
  * curl -X POST http://localhost:3000/user_add?f_name=temporary&l_name=user&email=temp@orary.user
