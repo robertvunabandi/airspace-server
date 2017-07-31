@@ -8,6 +8,9 @@ const bodyParser = require('body-parser');
 const index = require('./routes/index');
 const travel_notice = require('./routes/travel_notices_route');
 const users = require('./routes/users_route');
+const notifications = require('./routes/notifications_route');
+const messages = require('./routes/messages_route');
+const request = require('./routes/requests_route');
 
 const app = express();
 
@@ -48,6 +51,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', index); //
 app.use('/travel_notice', travel_notice); //
 app.use('/user', users); //
+app.use('/notification', notifications);
+app.use('/message', messages);
+app.use('/request', request);
 
 // catch 404 and forward to error handler
 app.use(function (request, response, next) {
