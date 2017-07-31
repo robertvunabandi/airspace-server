@@ -38,5 +38,5 @@ name <String, Function> model name or class extending Model
 [collection] <String> name (optional, inferred from model name)
 [skipInit] <Boolean> whether to skip initialization (defaults to false)
 
-// const TravelNotice = require('./schemas/travel_notices.js');
+// const TravelNotice = require('./schemas/travel_notices_route.js');
 */

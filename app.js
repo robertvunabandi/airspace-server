@@ -6,8 +6,8 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 
 const index = require('./routes/index');
-const travel_notice = require('./routes/travel_notices');
-const users = require('./routes/users');
+const travel_notice = require('./routes/travel_notices_route');
+const users = require('./routes/users_route');
 
 const app = express();
 

@@ -55,6 +55,7 @@ function log_separator(count) {
 		}
 	}
 }
+
 function log_requested_items(request) {
 	log_separator(1);
 	let body = "";
@@ -80,6 +81,7 @@ function sf_req(request, stringName, tag = null) {
 	}
 	return result;
 }
+
 /* functions to get booleans from requests safely */
 function sf_req_bool(request, stringName, tag = null) {
 	let res = sf_req(request, stringName, tag);
@@ -91,6 +93,7 @@ function sf_req_bool(request, stringName, tag = null) {
 		return false;
 	}
 }
+
 /* functions to get integers from requests safely */
 function sf_req_int(request, stringName, tag = null) {
 	let folder = tag === null ? "" : tag;
@@ -102,19 +105,20 @@ function sf_req_int(request, stringName, tag = null) {
 		return parseInt(res);
 	}
 }
+
 /* function to check nullity, checks if something is null or empty */
 function isEmpty(element) {
 	// returns a boolean of whether this element is empty
 	return element === null || element === undefined;
 }
-function isANumber(element){
+
+function isANumber(element) {
 	return (typeof(element) !== "object") && !isNaN(element) && (typeof(element) === 'number' || (typeof(parseInt(element)) === 'number' && !isNaN(parseInt(element))));
 };
 
 function isEmptyArray(array) {
 	return array.length === 0;
 }
-
 /* POST new user into database
  * curl -X POST http://localhost:3000/user_add?f_name=temporary&l_name=user&email=temp@orary.user
  * curl -X POST http://localhost:3000/user_add?f_name=dumb&l_name=dumb&email=dumb@dumb.dumb
@@ -357,7 +361,5 @@ router.get('/login', function (request, response, next) {
 		}
 	});
 });
-
-
 
 module.exports = router;
