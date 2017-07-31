@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="dfa04085-23c4-4e48-93e6-23d49a42297d" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/routes/index.js" afterPath="$PROJECT_DIR$/routes/index.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
@@ -56,8 +55,8 @@
       <file leaf-file-name="index.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/routes/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="426">
-              <caret line="1506" column="34" lean-forward="false" selection-start-line="1506" selection-start-column="34" selection-end-line="1506" selection-end-column="34" />
+            <state relative-caret-position="285">
+              <caret line="1327" column="74" lean-forward="false" selection-start-line="1327" selection-start-column="74" selection-end-line="1327" selection-end-column="74" />
               <folding>
                 <element signature="e#1364#1867#0" expanded="false" />
                 <element signature="n#!!block;n#log_separator#0" expanded="false" />
@@ -135,7 +134,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>chatColl</find>
       <find>travel_notice_add</find>
       <find>travels</find>
       <find>request_get_to</find>
@@ -160,11 +158,12 @@
       <find>concat</find>
       <find>Notification</find>
       <find>/request_get_from</find>
-      <find>new Notification</find>
       <find>new Notific</find>
       <find>request_get_</find>
       <find>LOG.</find>
       <find>request not found in r</find>
+      <find>new Notification</find>
+      <find>valueOf</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -408,12 +407,12 @@
       <option name="presentableId" value="Default" />
       <updated>1500250503255</updated>
       <workItem from="1500250506491" duration="85026000" />
-      <workItem from="1501094381553" duration="34884000" />
+      <workItem from="1501094381553" duration="35216000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="119910000" />
+    <option name="totallyTimeSpent" value="120242000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -468,13 +467,13 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/routes/index.js</url>
-          <line>2421</line>
+          <line>2423</line>
           <properties />
           <option name="timeStamp" value="15" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/routes/index.js</url>
-          <line>1645</line>
+          <line>1647</line>
           <properties />
           <option name="timeStamp" value="19" />
         </line-breakpoint>
@@ -484,8 +483,14 @@
           <properties />
           <option name="timeStamp" value="22" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/routes/index.js</url>
+          <line>1444</line>
+          <properties />
+          <option name="timeStamp" value="23" />
+        </line-breakpoint>
       </breakpoints>
-      <option name="time" value="23" />
+      <option name="time" value="24" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -675,8 +680,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/routes/index.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="426">
-          <caret line="1506" column="34" lean-forward="false" selection-start-line="1506" selection-start-column="34" selection-end-line="1506" selection-end-column="34" />
+        <state relative-caret-position="285">
+          <caret line="1327" column="74" lean-forward="false" selection-start-line="1327" selection-start-column="74" selection-end-line="1327" selection-end-column="74" />
           <folding>
             <element signature="e#1364#1867#0" expanded="false" />
             <element signature="n#!!block;n#log_separator#0" expanded="false" />

@@ -1215,7 +1215,7 @@ router.get('/travels_all', function (request, response, next) {
 
 /* POST send or receive request
  * curl -X POST http://localhost:3000/request_send?travel_notice_id=
- * curl -X POST http://localhost:3000/request_send?travel_notice_id=596a79585749ad1f3b77234b&ruid=5967d57baf06e6606c442961&item_envelopes=true&item_smbox=false&item_lgbox=false&item_clothing=false&item_other=false&item_total=1&sending=false&receiving=false
+ * curl -X POST http://localhost:3000/request_send?travel_notice_id=597fa445fb5eaf0011445f98&ruid=597fa392fb5eaf0011445f91&action=0&recipient_name=lol&recipient_email=lol&recipient_phone=2465798&recipient_uses_app=false&deliverer_name=lol&deliverer_email=lol&deliverer_phone=12345678&deliverer_uses_app=true&item_total=5
  * */
 router.post("/request_send", function (request, response, next) {
 	/* send or receive request sent to a specific user from query
@@ -1312,7 +1312,6 @@ router.post("/request_send", function (request, response, next) {
 				// create a function for saving this request to the user's lists of requests
 				let save_request_to_user = function (savedRequest, savedTn) {
 					// find the user
-					LOG.e("HERE 2");
 					User.findOne({_id: ruid}, function (findingUSRError, userFound) {
 						if (findingUSRError) {
 							callback(500, savedRequest, savedTn, "Error in findingUSRError", true);
@@ -1323,9 +1322,9 @@ router.post("/request_send", function (request, response, next) {
 						} else {
 							// modify content
 							try {
-								userFound.requests_ids.push(savedRequest._id.valueOf());
+								userFound.requests_ids.push(savedRequest._id);
 							} catch (e) {
-								userFound.requests_ids = [savedRequest._id.valueOf()];
+								userFound.requests_ids = [savedRequest._id];
 							}
 							userFound.save(function (savingUSRError, userSaved) {
 								if (savingUSRError) {
@@ -1344,7 +1343,9 @@ router.post("/request_send", function (request, response, next) {
 										user_from_id: ruid,
 										action: 10
 									});
-									n.save();
+									n.save(function(savingError, savedNotification) {
+
+									});
 								}
 							});
 						}
@@ -1360,7 +1361,7 @@ router.post("/request_send", function (request, response, next) {
 							// we add rs_add to the travel notice requests_ids
 							let rs_add = {
 								user_id: request_saved.ruid,
-								request_id: request_saved._id.valueOf()
+								request_id: request_saved._id
 							};
 							try {
 								let currentCount = isEmpty(tn.pending_requests_count) || isANumber(tn.pending_requests_count) ? 0 : tn.pending_requests_count;
@@ -1504,14 +1505,13 @@ router.post("/request_accept", function (request, response, next) {
 									action: 11
 								});
 								n.save();
-								//
 							}
 						});
 					};
 
 					// check if request_id is in this travel notice
 					for (let i = 0; i < travelNotice.requests_ids.length; i++) {
-						let test_request_id = travelNotice.requests_ids[i].request_id.valueOf();
+						let test_request_id = travelNotice.requests_ids[i].request_id;
 						console.log(`${test_request_id} ${request_id} ${test_request_id == request_id}`);
 						if (test_request_id == request_id) {
 							// save the request if we find it
@@ -2510,7 +2510,7 @@ router.post("/travel_notice_delete", function (request, response, next) {
 				// inside of user, check if this travel notice exist, don't move forward if not
 				let findTnIdInUser = function() {
 					for (let i = 0; i < userFound.travel_notices_ids.length; i++) {
-						if (userFound.travel_notices_ids[i].valueOf() == travel_notice_id) {
+						if (userFound.travel_notices_ids[i] == travel_notice_id) {
 							// get travel notice if we find the id inside of the travel notices
 							getTravelNotice(i);
 							break;
@@ -2566,7 +2566,7 @@ router.post("/travel_notice_delete", function (request, response, next) {
 				};
 			};
 			// this list is made of objects {user_id: <Obj>, request_id: <Obj>}
-			let srId = requestIdArray[i].request_id.valueOf();
+			let srId = requestIdArray[i].request_id;
 			// find the request
 			ShippingRequest.findOne({_id:srId}, function(findingSRError, srFound) {
 				// if (err) {} else if (isEmpty()) {} else {}
@@ -2613,7 +2613,7 @@ router.post("/travel_notice_delete", function (request, response, next) {
 							// TODO - Check, one of either user or tn has an object instead of a request string in request ids
 							// delete request in user
 							for (let k = 0; k < userFound.requests_ids.length; k++) {
-								if (userFound.requests_ids[i].valueOf() == srId) {
+								if (userFound.requests_ids[i] == srId) {
 									userFound.requests_ids.splice(i, 1);
 									userFound.save(function(savingError) {
 										// then delete request
