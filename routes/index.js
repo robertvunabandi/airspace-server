@@ -1664,7 +1664,6 @@ router.get("/request_get_from_travel_notice", function (request, response, next)
 	// find the requests for this travel notice
 	let findAllRequestsForTn = function(foundTravelNotice) {
 		// assumes foundTravelNotice is not empty
-		LOG.i(foundTravelNotice);
 		ShippingRequest.find({}, function(findingError, foundSRs) {
 			if (findingError) {
 				callback(500, null, null, "Internal Server Error", findingError);
