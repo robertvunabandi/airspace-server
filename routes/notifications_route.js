@@ -73,7 +73,7 @@ router.get('/get', function (request, response, next) {
 		response.send(JSON.stringify(server_response));
 	};
 
-	let user_id = sf_req(request, "uid", "notifications_get");
+	let user_id = sf_req(request, "uid", "notifications/get");
 	// get all the notifications that belong to this user
 
 	if (isEmpty(user_id)) {

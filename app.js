@@ -49,7 +49,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', index); //
 app.use('/travel_notice', travel_notice); //
 app.use('/user', users); //
-app.use('/notification', notifications);
+app.use('/notifications', notifications);
 app.use('/message', messages);
 app.use('/request', request);
 

@@ -15,57 +15,24 @@ const sf_req = helpers.sf_req; const sf_req_bool = helpers.sf_req_bool; const sf
 const isEmpty = helpers.isEmpty; const isEmptyArray = helpers.isEmptyArray; const isANumber = helpers.isANumber;
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/* GET test
- * curl -X GET http://localhost:3000/test
- * */
+// curl -X GET http://localhost:3000/test
 router.get('/test', function (request, response, next) {
 	response.setHeader('Content-Type', 'application/json');
 	response.send(JSON.stringify({numbers: [0, 1, 2, 3, 4, 5, 6], names: ["Ruben", "Amanda", "Robert"]}));
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* GET travel notices. This is probably the hardest method to implement.
- * curl -X GET http://localhost:3000/travels?to=sat&from=sea&day_by=20&month_by=12&year_by=2018
+ * curl -X GET http://localhost:3000/travels?to=sat&from=sea&day_by=20&month_by=12&year_by=2018&uid=
  * curl -X GET https://mysterious-headland-54722.herokuapp.com/travels?to=sat&from=sea&day_by=20&month_by=12&year_by=2018
  * */
 router.get('/travels', function (request, response, next) {
-	/*
-	 curl -X GET https://mysterious-headland-54722.herokuapp.com/travels?to=Boston&from=San%20Francisco&day_by=41&month_by=4&year_by=2018
-	 curl -X GET http://localhost:3000/travels?to=Boston&from=San%20Francisco&day_by=41&month_by=4&year_by=2018
-	 curl --header "APC-Auth: 96dc04b3fb" -X GET https://www.air-port-codes.com/airport-codes-api/multi/demo?term=newark
-	 curl --header "APC-Auth: 96dc04b3fb, Referer: https://www.air-port-codes.com/airport-codes-api/multi/" -X GET https://www.air-port-codes.com/api/v1/multi?term=newark
-	 curl --header "APC-Auth: b76ea0b73d" -X GET https://www.air-port-codes.com/api/v1/multi?term=newark
-	 curl --header "APC-Auth: b76ea0b73d" https://www.air-port-codes.com/api/v1/multi?term=newark
-	 https://www.air-port-codes.com/api/v1/multi?term=LAX&APC-Auth=b76ea0b73d
-	 THIS:
-	 curl --header "APC-Auth: b76ea0b73d" -X GET https://www.air-port-codes.com/api/v1/multi?term=newark
-	 GIVES THIS ERROR:
-	 {"status":false,"statusCode":400,"message":"We can't seem to find a referrer for you. You may need to create an API Secret for your account. Login to your AIR-PORT-CODES account to create an API Secret.","term":"newark"}
-	 */
 	// callback once we get the result
-	let callback = function (status_, data_, message_, error_) {
-		// callback for responding to send to user
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status_);
-		let server_response;
-		if (error_) {
-			server_response = {success: false, data: null, message: message_, error: error_};
-		} else if (data_ === null) {
-			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, data: null, message: message_, error: false};
-		} else {
-			server_response = {success: true, data: data_, message: message_, error: false};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	let callback = helpers.callbackFormatorData(response);
 	// get the id of the user
 	let _id_ = sf_req(request, "uid", "travels");
 	// get the from's and too's from the request with the dateby
@@ -262,37 +229,21 @@ router.get('/travels', function (request, response, next) {
 
 
 /* GET travel notices. This is probably the hardest method to implement.
- * curl -X GET http://localhost:3000/travels_all?to=sat&from=sea&day_by=20&month_by=12&year_by=2018
+ * curl -X GET http://localhost:3000/travels_all?to=sat&from=sea&day_by=20&month_by=12&year_by=2018&uid=
  * curl -X GET https://mysterious-headland-54722.herokuapp.com/travels?to=sat&from=sea&day_by=20&month_by=12&year_by=2018
  * */
 router.get('/travels_all', function (request, response, next) {
 	// callback once we get the result
-	let callback = function (status_, data_, message_, error_) {
-		// callback for responding to send to user
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status_);
-		let server_response;
-		if (error_) {
-			server_response = {success: false, data: null, message: message_, error: error_};
-		} else if (data_ === null) {
-			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, data: null, message: message_, error: false};
-		} else {
-			server_response = {success: true, data: data_, message: message_, error: false};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	let callback = helpers.callbackFormatorData(response);
 	// get the id of the user
 	let _id_ = sf_req(request, "uid", "travels");
 	// get the from's and too's from the request with the dateby
-	let fromQuery = sf_req(request, "from", "travels");
-	let toQuery = sf_req(request, "to", "travels");
 	let dayBy = sf_req_int(request, "day_by", "travels");
 	let monthBy = sf_req_int(request, "month_by", "travels");
 	let yearBy = sf_req_int(request, "year_by", "travels");
-	let requestObject = {id: ""+_id_, from: ""+fromQuery, to: ""+toQuery, day_by: ""+dayBy, month_by: ""+monthBy, year_by: ""+yearBy};
+	let requestObject = {uid: ""+_id_, day_by: ""+dayBy, month_by: ""+monthBy, year_by: ""+yearBy};
 
-	if (isEmpty(fromQuery) || isEmpty(toQuery) || isEmpty(dayBy) || isEmpty(monthBy) || isEmpty(yearBy) || isEmpty(_id_)) {
+	if (isEmpty(dayBy) || isEmpty(monthBy) || isEmpty(yearBy) || isEmpty(_id_)) {
 		// if any of those are empty, we can't perform search
 		callback(403, null, {
 			message: `Some or all of parameters were not specified. All parameters are required.`,
@@ -392,14 +343,7 @@ router.get('/travels_all', function (request, response, next) {
 	}
 });
 
-
-router.get("/test_2", function (request, response, next) {
-	response.status(410).send("Gone!!!");
-});
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 module.exports = router;

@@ -25,6 +25,11 @@ let log_separator = function (count) {
 	}
 };
 
+let isEmpty = function (element) {
+	// returns a boolean of whether this element is empty
+	return element === null || element === undefined;
+};
+
 let helpers = {
 	fromMStoDate: function (ms) {
 		// returns an array, [dd, mm, yyyy, hour, min, second] in integer values in military time,
@@ -36,8 +41,7 @@ let helpers = {
 		return (typeof(element) !== "object") && !isNaN(element) && (typeof(element) === 'number' || (typeof(parseInt(element)) === 'number' && !isNaN(parseInt(element))));
 	},
 	isEmpty: function (element) {
-		// returns a boolean of whether this element is empty
-		return element === null || element === undefined;
+		return isEmpty(element);
 	},
 	isEmptyArray: function (array) {
 		return array.length === 0;
@@ -109,7 +113,7 @@ let helpers = {
 		}
 
 	},
-	sf_req_int(request, stringName, tag = null) {
+	sf_req_int: function (request, stringName, tag = null) {
 		/* functions to get integers from requests safely */
 		let folder = tag === null ? "" : tag;
 		let res = sf_req(request, stringName, tag);
@@ -120,6 +124,54 @@ let helpers = {
 			return parseInt(res);
 		}
 
+	},
+	callbackFormatorData: function (HTTPResponse) {
+		// creates a callback with the results in order, always include message, success, and error
+		return function (status_, data_, message_, error_) {
+			HTTPResponse.setHeader('Content-Type', 'application/json');
+			HTTPResponse.status(status_);
+			let server_response;
+			if (error_) {
+				server_response = {success: false, data: data_, message: message_, error: error_};
+			} else if (data_ === null) {
+				server_response = {success: false, data: data_, message: message_, error: false};
+			} else {
+				server_response = {success: true, data: data_, message: message_, error: false};
+			}
+			setTimeout(function() {
+				// safely send the request
+				HTTPResponse.send(JSON.stringify(server_response));
+			}, 0);
+		};
+	},
+	callbackFormatorSrTn: function (HTTPResponse, booleanTn) {
+		// creates a callback with the results in order, always include message, success, and error response is different
+		return function (status_, sr_, tn_, message_, error_) {
+			HTTPResponse.setHeader('Content-Type', 'application/json');
+			HTTPResponse.status(status_);
+			let server_response;
+			if (error_) {
+				server_response = {success: false, request: sr_, travel_notice: tn_, message: message_, error: error_};
+			} else if (booleanTn) {
+				// booleanTn makes things a bit more complex
+				if (isEmpty(sr_) || isEmpty(tn_)) {
+					server_response = {success: false, request: sr_, travel_notice: tn_, message: message_, error: false};
+				} else {
+					server_response = {success: true, request: sr_, travel_notice: tn_, message: message_, error: false};
+				}
+			} else if (!booleanTn) {
+				// booleanTn makes things a bit more complex
+				if (isEmpty(sr_)) {
+					server_response = {success: false, request: sr_, travel_notice: tn_, message: message_, error: false};
+				} else {
+					server_response = {success: true, request: sr_, travel_notice: tn_, message: message_, error: false};
+				}
+			}
+			setTimeout(function() {
+				// safely send the request
+				HTTPResponse.send(JSON.stringify(server_response));
+			}, 0);
+		};
 	}
 };
 
