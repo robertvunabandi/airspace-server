@@ -43,8 +43,7 @@ connection.on("connected", function () {
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
-app.use(bodyParser.json({limit: '16mb'})); // make the file size limit bigger
+app.use(bodyParser.urlencoded({limit: '16mb', extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
