@@ -77,18 +77,20 @@ router.post('/profile_save', function(request, response, next) {
 	}
 });
 
+// curl -X GET http://localhost:3000/image/get_profile_image\?image_id\=5982326242126b00110ac8f6
 router.get('/get_profile_image', function(request, response, next) {
-	let callback = img_hlps.callbackFormatorData(response);
+	let callback = helpers.callbackFormatorData(response);
 	let TAG = "/image/get_profile_image";
 	let imageId = sf_req(request, "image_id", TAG);
 	ProfileImageBMP.findOne({_id: imageId}, function(findingError, foundImg){
 		if (findingError) {
-			callback(500, {message: "Internal Server Error", received_content_type: null}, null, true);
+			callback(500, null, "Internal Server Error", findingError);
 		} else if (isEmpty(foundImg)) {
-			callback(500, {message: "Image not found", received_content_type: null}, null, true);
+			callback(500, null, "image not found", true);
 		} else {
-			callback(200, foundImg.bmp, foundImg.content_type, false);
+			callback(200, foundImg, "Image received", false);
 		}
 	});
+	// response.send(JSON.stringify({message: false}));
 });
 module.exports = router;
