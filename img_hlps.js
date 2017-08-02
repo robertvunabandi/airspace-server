@@ -23,7 +23,7 @@ let img_hlps = {
 				// TODO - IMPLEMENT THIS
 				HTTPResponse.setHeader('Content-Type', 'image/bmp');
 				HTTPResponse.contentType(imgContentType); // set the image content type
-				server_response = "NOT IMPLEMENTED BITMAP";
+				server_response = data_;
 				setTimeout(function () {
 					// safely send the request
 					HTTPResponse.send(server_response);

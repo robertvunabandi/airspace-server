@@ -37,7 +37,7 @@ router.post('/profile_save', function(request, response, next) {
 		reqContentType = img_hlps.getReqContentType(request, TAG);
 		profileImage = new ProfileImageBMP({
 			user_id: sf_req(request, "user_id", TAG),
-			bmp: bmp_,
+			bmp: image,
 			content_type: reqContentType,
 			date_saved: helpers.newDate()
 		});
@@ -65,9 +65,30 @@ router.post('/profile_save', function(request, response, next) {
 	}
 
 	function saveImage() {
+		profileImage.save(function(savingError, savedImg){
+			if (savingError) {
+				callback(500, {message: "Internal Server Error", received_content_type: null}, null, true);
+			} else {
+				callback(200, savedImg.bmp, savedImg.content_type, false);
+			}
+		});
 		//response.send("NOT IMPLEMENTED");
-		callback(503, {message: "Not implemented Endpoint", received_content_type: profileImage.contentType}, profileImage.contentType, true);
+		// callback(503, {message: "Not implemented Endpoint", received_content_type: profileImage.contentType}, profileImage.contentType, true);
 	}
 });
 
+router.get('/get_profile_image', function(request, response, next) {
+	let callback = img_hlps.callbackFormatorData(response);
+	let TAG = "/image/get_profile_image";
+	let imageId = sf_req(request, "image_id", TAG);
+	ProfileImageBMP.findOne({_id: imageId}, function(findingError, foundImg){
+		if (findingError) {
+			callback(500, {message: "Internal Server Error", received_content_type: null}, null, true);
+		} else if (isEmpty(foundImg)) {
+			callback(500, {message: "Image not found", received_content_type: null}, null, true);
+		} else {
+			callback(200, foundImg.bmp, foundImg.content_type, false);
+		}
+	});
+});
 module.exports = router;
