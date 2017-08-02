@@ -16,6 +16,28 @@ const LOG = helpers.LOG; const log_separator = helpers.log_separator; const log_
 const sf_req = helpers.sf_req; const sf_req_bool = helpers.sf_req_bool; const sf_req_int = helpers.sf_req_int;
 const isEmpty = helpers.isEmpty; const isEmptyArray = helpers.isEmptyArray; const isANumber = helpers.isANumber;
 
+console.log(__dirname);
+const fs = require('fs');
+// curl -X GET http://localhost:3000/image/save_local_img
+router.get('/save_local_img', function(request, response) {
+	let img = new ProfileImageBMP({
+		user_id: "test_local",
+		bmp: fs.readFileSync(__dirname+"/xsoccerBall.png"),
+		content_type: "image/png",
+		date_saved: helpers.newDate()
+	});
+
+	img.save(function (savingError, imageSaved) {
+		if (savingError) {
+			response.send("ERROR OCCURED");
+		} else {
+			response.contentType(imageSaved.content_type);
+			response.send(imageSaved.bmp);
+		}
+	});
+
+});
+
 /** POST Save profile image
  * curl -X POST http://localhost:3000/image/profile_save
  */
@@ -37,7 +59,7 @@ router.post('/profile_save', function(request, response, next) {
 		reqContentType = img_hlps.getReqContentType(request, TAG);
 		profileImage = new ProfileImageBMP({
 			user_id: sf_req(request, "user_id", TAG),
-			bmp: image,
+			bmp: bmp_,
 			content_type: reqContentType,
 			date_saved: helpers.newDate()
 		});
@@ -77,7 +99,7 @@ router.post('/profile_save', function(request, response, next) {
 	}
 });
 
-// curl -X GET http://localhost:3000/image/get_profile_image\?image_id\=5982326242126b00110ac8f6
+// curl -X GET http://localhost:3000/image/get_profile_image\?image_id\=5982397b42126b00110ac8f9
 router.get('/get_profile_image', function(request, response, next) {
 	let callback = helpers.callbackFormatorData(response);
 	let TAG = "/image/get_profile_image";
@@ -88,7 +110,9 @@ router.get('/get_profile_image', function(request, response, next) {
 		} else if (isEmpty(foundImg)) {
 			callback(500, null, "image not found", true);
 		} else {
-			callback(200, foundImg, "Image received", false);
+			// callback(200, foundImg, "Image received", false);
+			response.contentType(foundImg.content_type);
+			response.send(foundImg.bmp);
 		}
 	});
 	// response.send(JSON.stringify({message: false}));
