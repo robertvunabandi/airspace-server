@@ -16,7 +16,6 @@ const LOG = helpers.LOG; const log_separator = helpers.log_separator; const log_
 const sf_req = helpers.sf_req; const sf_req_bool = helpers.sf_req_bool; const sf_req_int = helpers.sf_req_int;
 const isEmpty = helpers.isEmpty; const isEmptyArray = helpers.isEmptyArray; const isANumber = helpers.isANumber;
 
-console.log(__dirname);
 const fs = require('fs');
 // curl -X GET http://localhost:3000/image/save_local_img
 router.get('/save_local_img', function(request, response) {
@@ -65,15 +64,12 @@ router.post('/profile_save', function(request, response, next) {
 		});
 
 		let parameters = {
-			user_id: sf_req(request, "user_id", TAG),
-			bmp: bmp_,
-			content_type: reqContentType,
-			date_saved: helpers.newDate()
+			user_id: sf_req(request, "user_id", TAG), bmp: bmp_, content_type: reqContentType
 		};
 
-		helpers.log_separator(3);
+		helpers.log_separator(2);
 		console.log(parameters);
-		helpers.log_separator(3);
+		helpers.log_separator(2);
 		saveImage();
 	};
 
