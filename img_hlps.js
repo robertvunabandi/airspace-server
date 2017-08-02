@@ -1,3 +1,5 @@
+let helpers = require('./helpers');
+
 let img_hlps = {
 	callbackFormatorData: function(HTTPResponse) {
 		return function(status_, data_, imgContentType, error_) {
@@ -34,9 +36,12 @@ let img_hlps = {
 		// TODO - IMPLEMENT THIS FUNCTION
 		return Buffer.from(image);
 	},
-	getReqContentType: function(request){
-		// TODO - IMPLEMENT THiS FUNCTION
-		return "image/jpeg";
+	getReqContentType: function(request, tag = null){
+		let contentType = helpers.sf_req(request, "content_type", tag);
+		// TODO - do some safety checks, morph content type just in case OR return null which will be blocked by endpoint
+
+		// send the final contentType
+		return contentType;
 	}
 };
 

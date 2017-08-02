@@ -34,16 +34,28 @@ router.post('/profile_save', function(request, response, next) {
 	let continueStart = function() {
 		bmp_ = img_hlps.convertImageToBmp(image);
 		// - get the request content type
-		reqContentType = img_hlps.getReqContentType(request);
+		reqContentType = img_hlps.getReqContentType(request, TAG);
 		profileImage = new ProfileImageBMP({
 			user_id: sf_req(request, "user_id", TAG),
 			bmp: bmp_,
-			contentType: reqContentType,
+			content_type: reqContentType,
 			date_saved: helpers.newDate()
 		});
 
+		let parameters = {
+			user_id: sf_req(request, "user_id", TAG),
+			bmp: bmp_,
+			content_type: reqContentType,
+			date_saved: helpers.newDate()
+		};
+
+		helpers.log_separator(3);
+		console.log(parameters);
+		helpers.log_separator(3);
 		saveImage();
 	};
+
+
 
 	// TODO - IMPLEMENT THESE
 	if (isEmpty(image)) {
