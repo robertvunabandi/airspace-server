@@ -25,6 +25,7 @@ const isEmpty = helpers.isEmpty; const isEmptyArray = helpers.isEmptyArray; cons
  * */
 router.post("/add", function (request, response, next) {
 	// This assumes that variables gotten from request are correct
+	// TODO - Check if request has been created before by user
 
 	// callback for when request is over
 	let callback = function (status_, data_, message_, error_) {

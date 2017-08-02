@@ -54,7 +54,7 @@ router.post('/add', function (request, response, next) {
 	});
 });
 /* GET new user into database
- * curl -X GET http://localhost:3000/notifications_get?uid=test
+ * curl -X GET http://localhost:3000/notifications/get?uid=test
  *
  * */
 router.get('/get', function (request, response, next) {
@@ -85,6 +85,7 @@ router.get('/get', function (request, response, next) {
 			} else if (isEmpty(foundNotifications)) {
 				callback(404, null, "You have no notifications.", false);
 			} else {
+				// TODO - sort by time just in case
 				sendResult(foundNotifications);
 			}
 		});

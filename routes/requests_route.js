@@ -788,10 +788,10 @@ router.post("/delete", function (request, response, next) {
 				let saveUser = function () {
 					foundUser.save(function(savingError, savedUser) {
 						if (savingError) {
-							callback(500, null, null, "Error occurred while saving the suer", savingError);
+							callback(500, null, null, "Error occurred while saving the user", savingError);
 						} else {
 							// Find the shipping request once the user is saved
-							findShippingRequest();
+							findShippingRequest(savedUser);
 						}
 					});
 				};
@@ -862,7 +862,7 @@ router.post("/delete", function (request, response, next) {
 								saveTravel();
 								break;
 							}
-							if (i >= foundUser.requests_ids.length - 1) {
+							if (i >= foundTN.requests_ids.length - 1) {
 								successObjectMessage.travel_notice = {success: false, message: "travel notice did not have the shipping request id"};
 								saveTravel();
 							}
