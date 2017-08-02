@@ -11,6 +11,7 @@ const users = require('./routes/users_route');
 const notifications = require('./routes/notifications_route');
 const messages = require('./routes/messages_route');
 const request = require('./routes/requests_route');
+const img = require('./routes/img_route');
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use('/user', users); //
 app.use('/notifications', notifications);
 app.use('/message', messages);
 app.use('/request', request);
+app.use('/image', img);
 
 // catch 404 and forward to error handler
 app.use(function (request, response, next) {

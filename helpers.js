@@ -138,13 +138,13 @@ let helpers = {
 			} else {
 				server_response = {success: true, data: data_, message: message_, error: false};
 			}
-			setTimeout(function() {
+			setTimeout(function () {
 				// safely send the request
 				HTTPResponse.send(JSON.stringify(server_response));
 			}, 0);
 		};
 	},
-	callbackFormatorSrTn: function (HTTPResponse, booleanTn) {
+	callbackFormatorSrTn: function (HTTPResponse) {
 		// creates a callback with the results in order, always include message, success, and error response is different
 		return function (status_, sr_, tn_, message_, error_) {
 			HTTPResponse.setHeader('Content-Type', 'application/json');
@@ -152,26 +152,88 @@ let helpers = {
 			let server_response;
 			if (error_) {
 				server_response = {success: false, request: sr_, travel_notice: tn_, message: message_, error: error_};
-			} else if (booleanTn) {
-				// booleanTn makes things a bit more complex
-				if (isEmpty(sr_) || isEmpty(tn_)) {
-					server_response = {success: false, request: sr_, travel_notice: tn_, message: message_, error: false};
-				} else {
-					server_response = {success: true, request: sr_, travel_notice: tn_, message: message_, error: false};
-				}
-			} else if (!booleanTn) {
-				// booleanTn makes things a bit more complex
-				if (isEmpty(sr_)) {
-					server_response = {success: false, request: sr_, travel_notice: tn_, message: message_, error: false};
-				} else {
-					server_response = {success: true, request: sr_, travel_notice: tn_, message: message_, error: false};
-				}
+			} else if (isEmpty(sr_) || isEmpty(tn_)) {
+				server_response = {success: false, request: sr_, travel_notice: tn_, message: message_, error: false};
+			} else {
+				server_response = {success: true, request: sr_, travel_notice: tn_, message: message_, error: false};
 			}
-			setTimeout(function() {
+
+
+			setTimeout(function () {
 				// safely send the request
 				HTTPResponse.send(JSON.stringify(server_response));
 			}, 0);
 		};
+	},
+	callbackFormatorSrTnUsr: function (HTTPResponse) {
+		// creates a callback with the results in order, always include message, success, and error response is different
+		return function (status_, sr_, tn_, usr_, message_, error_) {
+			HTTPResponse.setHeader('Content-Type', 'application/json');
+			HTTPResponse.status(status_);
+			let server_response;
+			if (error_) {
+				server_response = {
+					success: false,
+					request: sr_,
+					travel_notice: tn_,
+					user: usr_,
+					message: message_,
+					error: error_
+				};
+			} else if (isEmpty(sr_) || isEmpty(tn_) || isEmpty(usr_)) {
+				server_response = {
+					success: false,
+					request: sr_,
+					travel_notice: tn_,
+					user: usr_,
+					message: message_,
+					error: false
+				};
+			} else {
+				server_response = {
+					success: true,
+					request: sr_,
+					travel_notice: tn_,
+					user: usr_,
+					message: message_,
+					error: false
+				};
+			}
+
+			setTimeout(function () {
+				// safely send the request
+				HTTPResponse.send(JSON.stringify(server_response));
+			}, 0);
+		};
+	},
+	callbackFormatorTnUsr: function (HTTPResponse) {
+		// creates a callback with the results in order, always include message, success, and error response is different
+		return function (status_, tn_, usr_, message_, error_) {
+			HTTPResponse.setHeader('Content-Type', 'application/json');
+			HTTPResponse.status(status_);
+			let server_response;
+			if (error_) {
+				server_response = {success: false, travel_notice: tn_, user: usr_, message: message_, error: error_};
+			} else if (isEmpty(tn_) || isEmpty(usr_)) {
+				server_response = {success: false, travel_notice: tn_, user: usr_, message: message_, error: false};
+			} else {
+				server_response = {success: true, travel_notice: tn_, user: usr_, message: message_, error: false};
+			}
+
+			setTimeout(function () {
+				// safely send the request
+				HTTPResponse.send(JSON.stringify(server_response));
+			}, 0);
+		};
+	},
+	IFFF: function (error, fxnError, objectCheck, fxnEmpty, fxnGood) {
+		if (error) {
+			fxnError(error);
+		} else if (isEmpty(objectCheck)) {
+			fxnEmpty();
+		} else {
+			fxnGood(objectCheck);
+		}
 	}
 };
 

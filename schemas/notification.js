@@ -1,9 +1,5 @@
-/**
- * Created by celestin on 7/28/17.
- */
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-
 
 let Notification = new Schema({
 	user_id: {type: String, required: true}, // id of the user that this notification belongs to

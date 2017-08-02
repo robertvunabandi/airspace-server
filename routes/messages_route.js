@@ -14,11 +14,6 @@ const LOG = helpers.LOG; const log_separator = helpers.log_separator; const log_
 const sf_req = helpers.sf_req; const sf_req_bool = helpers.sf_req_bool; const sf_req_int = helpers.sf_req_int;
 const isEmpty = helpers.isEmpty; const isEmptyArray = helpers.isEmptyArray; const isANumber = helpers.isANumber;
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* POST send message
  * curl -X POST http://localhost:3000/message_send
  **/
@@ -144,11 +139,6 @@ router.post("/send", function (request, response, next) {
 	}
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* GET all the messages
  * curl -X GET http://localhost:3000/message_get_all?suid=<SUID>&ruid=<RUID>
  * */
@@ -201,11 +191,6 @@ router.get('/get_all', function (request, response, next) {
 		});
 	}
 });
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* GET all the messages that are unread
  * curl -X GET http://localhost:3000/message_get_unread?suid=<SUID>&ruid=<RUID>
@@ -276,12 +261,6 @@ router.get('/get_unread', function (request, response, next) {
 	}
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-
 /* POST reads all the messages (make them "read")
  * curl -X POST http://localhost:3000/message_get_unread?suid=<SUID>&ruid=<RUID>
  * */
@@ -339,3 +318,8 @@ router.post('/read', function (request, response, next) {
 });
 
 module.exports = router;
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

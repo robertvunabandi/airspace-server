@@ -14,10 +14,6 @@ const LOG = helpers.LOG; const log_separator = helpers.log_separator; const log_
 const sf_req = helpers.sf_req; const sf_req_bool = helpers.sf_req_bool; const sf_req_int = helpers.sf_req_int;
 const isEmpty = helpers.isEmpty; const isEmptyArray = helpers.isEmptyArray; const isANumber = helpers.isANumber;
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* GET new user into database
  * curl -X POST http://localhost:3000/notifications_add?uid=<id>
  *
@@ -53,9 +49,9 @@ router.post('/add', function (request, response, next) {
 		}
 	});
 });
+
 /* GET new user into database
  * curl -X GET http://localhost:3000/notifications/get?uid=test
- *
  * */
 router.get('/get', function (request, response, next) {
 	// callback function to call at the end

@@ -14,11 +14,6 @@ const LOG = helpers.LOG; const log_separator = helpers.log_separator; const log_
 const sf_req = helpers.sf_req; const sf_req_bool = helpers.sf_req_bool; const sf_req_int = helpers.sf_req_int;
 const isEmpty = helpers.isEmpty; const isEmptyArray = helpers.isEmptyArray; const isANumber = helpers.isANumber;
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* POST send or receive request
  * curl -X POST http://localhost:3000/request_send?travel_notice_id=
  * curl -X POST http://localhost:3000/request_send?travel_notice_id=597fa445fb5eaf0011445f98&ruid=597fa392fb5eaf0011445f91&action=0&recipient_name=lol&recipient_email=lol&recipient_phone=2465798&recipient_uses_app=false&deliverer_name=lol&deliverer_email=lol&deliverer_phone=12345678&deliverer_uses_app=true&item_total=5
@@ -28,27 +23,7 @@ router.post("/send", function (request, response, next) {
 	 or body, in the DB, this creates a new request. */
 
 	// callback once we get the result
-	let callback = function (status_, request_, travel_notice_, message_, error_) {
-		// callback for responding to send to user
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status_);
-		let server_response;
-		if (error_) {
-			server_response = {success: false, request: null, travel_notice: null, message: message_, error: error_};
-		} else if (request_ === null) {
-			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, request: null, travel_notice: null, message: message_, error: false};
-		} else {
-			server_response = {
-				success: true,
-				request: request_,
-				travel_notice: travel_notice_,
-				message: message_,
-				error: false
-			};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	let callback = helpers.callbackFormatorSrTnUsr(response);
 
 	// populate the new request
 	let requestedCount = sf_req_int(request, "item_total", "request_send");
@@ -100,18 +75,18 @@ router.post("/send", function (request, response, next) {
 	// we need to have at least 1 item requested so throw an error
 	if (requestedCount < 1 || isNaN(requestedCount)) {
 		// will throw error if not found in request
-		callback(403, null, null, `CLIENT ERROR: Requester must request at least 1 item to ship. Was ${requestedCount}`, true);
+		callback(403, null, null, null, `CLIENT ERROR: Requester must request at least 1 item to ship. Was ${requestedCount}`, true);
 	} else if (SENDRECEIVEBOOLEAN) {
 		// at least one of them must be true
-		callback(403, null, null, `CLIENT ERROR: Requester must either be sending a package or receiving one. action was ${action}.`, true);
+		callback(403, null, null, null, `CLIENT ERROR: Requester must either be sending a package or receiving one. action was ${action}.`, true);
 	} else if (isEmptyDelivererAndRecipient) {
-		callback(403, null, null, `CLIENT ERROR: Deliverer or recipient is not given in parameters. Given ${deliverer_} and ${recipient_}`, true);
+		callback(403, null, null, null, `CLIENT ERROR: Deliverer or recipient is not given in parameters. Given ${deliverer_} and ${recipient_}`, true);
 	} else {
 		TravelNotice.findOne({_id: sf_req(request, "travel_notice_id", "request")}, function (err, tn, next) {
 			if (err) {
-				callback(500, null, null, err, true);
+				callback(500, null, null, null, err, true);
 			} else if (tn === null) {
-				callback(403, null, null, "Requested travel does not exist", true);
+				callback(403, null, null, null, "Requested travel does not exist", true);
 			} else {
 				// if we found a matching travel notice, we save this request
 
@@ -120,11 +95,11 @@ router.post("/send", function (request, response, next) {
 					// find the user
 					User.findOne({_id: ruid}, function (findingUSRError, userFound) {
 						if (findingUSRError) {
-							callback(500, savedRequest, savedTn, "Error in findingUSRError", true);
+							callback(500, savedRequest, savedTn, null, "Error in findingUSRError", true);
 						} else if (isEmpty(userFound)) {
 							// Delete the saved request, this should never happen
 							ShippingRequest.remove({_id: savedRequest._id});
-							callback(403, null, savedTn, "User was not found! Wth...", true);
+							callback(403, null, savedTn, userFound, "User was not found! Wth...", true);
 						} else {
 							// modify content
 							try {
@@ -134,14 +109,14 @@ router.post("/send", function (request, response, next) {
 							}
 							userFound.save(function (savingUSRError, userSaved) {
 								if (savingUSRError) {
-									callback(500, savedRequest, savedTn, "Error in savingUSRError", true);
+									callback(500, savedRequest, savedTn, userSaved, "Error in savingUSRError", true);
 								} else {
 									// final callback
-									callback(201, savedRequest, savedTn, "Saved successfully", false);
+									callback(201, savedRequest, savedTn, userSaved, "Saved successfully", false);
 
 									let n = new Notification({
 										user_id: userFound._id,
-										message: "You received a new request", // TODO - ADD A USER NAME HERE (FROM XYZ)
+										message: `You received a new request from ${userSaved.f_name} ${userSaved.l_name}`, // TODO - ADD A USER NAME HERE (FROM XYZ)
 										sent: false,
 										date_received: helpers.newDate(),
 										travel_notice_from_id: savedTn._id,
@@ -149,7 +124,7 @@ router.post("/send", function (request, response, next) {
 										user_from_id: ruid,
 										action: 10
 									});
-									n.save(function(savingError, savedNotification) {
+									n.save(function (savingError, savedNotification) {
 
 									});
 								}
@@ -176,7 +151,7 @@ router.post("/send", function (request, response, next) {
 								tn.pending_requests_count = 1 + currentCount; // add to the pending request count
 								tn.save(function (tnSavingError, newTN) {
 									if (tnSavingError) {
-										callback(500, null, null, "Error in tnSavingError", tnSavingError);
+										callback(500, null, null, null, "Error in tnSavingError", tnSavingError);
 									} else {
 										save_request_to_user(request_saved, newTN);
 									}
@@ -190,7 +165,7 @@ router.post("/send", function (request, response, next) {
 								tn.pending_requests_count = 1 + currentCount; // add to the pending request count
 								tn.save(function (tnSavingError, newTN) {
 									if (tnSavingError) {
-										callback(500, null, null, "Error in tnSavingError", tnSavingError);
+										callback(500, null, null, null, "Error in tnSavingError", tnSavingError);
 									} else {
 										save_request_to_user(request_saved, newTN);
 									}
@@ -198,7 +173,7 @@ router.post("/send", function (request, response, next) {
 							}
 						} else {
 							console.log(`\n\n\n * * * ** Saving error occured\n\n\n`, saving_error);
-							callback(500, null, null, saving_error, true);
+							callback(500, null, null, null, saving_error, true);
 						}
 					});
 				};
@@ -223,7 +198,7 @@ router.post("/send", function (request, response, next) {
 								save_request_to_tn();
 								// we wait for the last index because of NodeJS's a-synchronousness
 							} else {
-								callback(403, null, null, "Request has already been sent", true);
+								callback(403, null, null, null, "Request has already been sent", true);
 							}
 						} else if (requestSent) {
 							// else move to last index to speed it up
@@ -238,37 +213,13 @@ router.post("/send", function (request, response, next) {
 	}
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* POST send or receive request, changes status from 0 to 1
  * curl -X POST http://localhost:3000/request/accept?request_id=597fb5cd433879001182b559&traveler_id=597fa34ffb5eaf0011445f90&travel_notice_id=597fa3c2fb5eaf0011445f96
- *
  * */
 router.post("/accept", function (request, response, next) {
 	// callback once we get the result
-	let callback = function (status_, request_, travel_notice_, message_, error_) {
-		// callback for responding to send to user
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status_);
-		let server_response;
-		if (error_) {
-			server_response = {success: false, request: null, travel_notice: null, message: message_, error: error_};
-		} else if (request_ === null) {
-			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, request: null, travel_notice: null, message: message_, error: false};
-		} else {
-			server_response = {
-				success: true,
-				request: request_,
-				travel_notice: travel_notice_,
-				message: message_,
-				error: false
-			};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	// TODO - Change to ...SrTnUsr(...
+	let callback = helpers.callbackFormatorSrTn(response);
 
 	let request_id = sf_req(request, 'request_id', 'request_accept');
 	let traveler_id = sf_req(request, 'traveler_id', 'request_accept');
@@ -339,37 +290,14 @@ router.post("/accept", function (request, response, next) {
 	});
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* POST send or receive request, changes status from 0 to 2
  * curl -X POST http://localhost:3000/request_decline
  *
  * */
 router.post("/decline", function (request, response, next) {
 	// callback once we get the result
-	let callback = function (status_, request_, travel_notice_, message_, error_) {
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status_);
-		let server_response;
-		if (error_) {
-			server_response = {success: false, request: null, travel_notice: null, message: message_, error: error_};
-		} else if (request_ === null) {
-			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, request: null, travel_notice: null, message: message_, error: false};
-		} else {
-			server_response = {
-				success: true,
-				request: request_,
-				travel_notice: travel_notice_,
-				message: message_,
-				error: false
-			};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	// TODO - Change to ...SrTnUsr(...
+	let callback = helpers.callbackFormatorSrTn(response);
 
 	let request_id = sf_req(request, 'request_id', 'request_accept');
 	let traveler_id = sf_req(request, 'traveler_id', 'request_accept');
@@ -440,31 +368,12 @@ router.post("/decline", function (request, response, next) {
 	});
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* GET
- * curl -X GET http://localhost:3000/request_get_from_travel_notice?travel_notice_id=597a1e28f10e810011c055bb
- *
+ * curl -X GET http://localhost:3000/request/get_from_travel_notice?travel_notice_id=597fa445fb5eaf0011445f98
  * */
 router.get("/get_from_travel_notice", function (request, response, next) {
 	// callback for responding to send to user
-	let callback = function (status_, requestArray_, travel_notice_, message_, error_) {
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status_);
-		let server_response;
-		if (error_) {
-			server_response = {success: false, request: null, travel_notice: travel_notice_, message: message_, error: error_};
-		} else if (isEmpty(requestArray_)) {
-			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, request: requestArray_, travel_notice: travel_notice_, message: message_, error: false};
-		} else {
-			server_response = {success: true, request: requestArray_, travel_notice: travel_notice_, message: message_, error: false};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	let callback = helpers.callbackFormatorSrTn(response);
 
 	// get required parameters
 	let travel_notice_id = sf_req(request, "travel_notice_id", "request_get_from_travel_notice");
@@ -480,9 +389,9 @@ router.get("/get_from_travel_notice", function (request, response, next) {
 	};
 
 	// find the requests for this travel notice
-	let findAllRequestsForTn = function(foundTravelNotice) {
+	let findAllRequestsForTn = function (foundTravelNotice) {
 		// assumes foundTravelNotice is not empty
-		ShippingRequest.find({}, function(findingError, foundSRs) {
+		ShippingRequest.find({}, function (findingError, foundSRs) {
 			if (findingError) {
 				callback(500, null, null, "Internal Server Error", findingError);
 			} else if (isEmpty(foundSRs)) {
@@ -506,7 +415,7 @@ router.get("/get_from_travel_notice", function (request, response, next) {
 	};
 
 	// find the travel notice
-	let findTravelNotice = function() {
+	let findTravelNotice = function () {
 		TravelNotice.findOne({_id: travel_notice_id}, function (findingError, foundTN) {
 			if (findingError) {
 				callback(500, null, null, "Internal Server Error", findingError);
@@ -526,32 +435,13 @@ router.get("/get_from_travel_notice", function (request, response, next) {
 	}
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* GET one users wants to see all the requests that he has sent
- * curl -X GET http://localhost:3000/request_get_my?uid=597a7f0699c6c400113ee2a1
- *
+ * curl -X GET http://localhost:3000/request/get_my?uid=597fa3a3fb5eaf0011445f93
  * */
 router.get("/get_my", function (request, response, next) {
 
 	// callback for responding to send to user
-	let callback = function (status_, requestArray_, message_, error_) {
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status_);
-		let server_response;
-		if (error_) {
-			server_response = {success: false, data: null, message: message_, error: error_};
-		} else if (isEmpty(requestArray_)) {
-			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, data: requestArray_, message: message_, error: false};
-		} else {
-			server_response = {success: true, data: requestArray_, message: message_, error: false};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	let callback = helpers.callbackFormatorData(response);
 
 	// set the uid of the user that is asking to see his requests
 	let uid = sf_req(request, "uid", "request_get_my");
@@ -578,33 +468,15 @@ router.get("/get_my", function (request, response, next) {
 	};
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* GET one users wants to see all the requests that people sent to him
- * curl -X GET http://localhost:3000/request_get_to_me?uid=5977a6ca44f8d217b87f7819
+ * curl -X GET http://localhost:3000/request/get_to_me?uid=5977a6ca44f8d217b87f7819
  *
- * curl -X GET http://localhost:3000/request_get_to_me?uid=5977a6ca44f8d217b87f7819
+ * curl -X GET http://localhost:3000/request/get_to_me?uid=597fa3a3fb5eaf0011445f93
  * */
 router.get("/get_to_me", function (request, response, next) {
 
 	// callback for responding to send to user
-	let callback = function (status_, requestIDArray_, message_, error_) {
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status_);
-		let server_response;
-		if (error_) {
-			server_response = {success: false, data: requestIDArray_, message: message_, error: error_};
-		} else if (isEmpty(requestIDArray_)) {
-			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, data: requestIDArray_, message: message_, error: false};
-		} else {
-			server_response = {success: true, data: requestIDArray_, message: message_, error: false};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	let callback = helpers.callbackFormatorData(response);
 
 	// initialize the list of requests to be sent to an empty list
 	let requestIDList = [];
@@ -685,53 +557,48 @@ router.get("/get_to_me", function (request, response, next) {
 	});
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* GET one users wants to see all the requests that people sent to him
- * curl -X GET http://localhost:3000/request_get?request_id=5977b33fc5264c00117e72f1
- * curl -X GET http://localhost:3000/request_get?request_id=5977b33fc5264c00117e72f1
+ * curl -X GET http://localhost:3000/request/get?request_id=5980f067a82ead00112a0b57
  * */
 router.get("/get", function (request, response, next) {
 	// callback for responding to send to user
-	let callback = function (status_, request_, tn_, message_, error_) {
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status_);
-		let server_response;
-		if (error_) {
-			server_response = {success: false, request: request_, travel_notice: tn_, message: message_, error: error_};
-		} else if (isEmpty(request_)) {
-			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, request: request_, travel_notice: tn_, message: message_, error: false};
-		} else {
-			server_response = {success: true, request: request_, travel_notice: tn_, message: message_, error: false};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	let callback = helpers.callbackFormatorSrTnUsr(response);
 
 	// set the uid of the user that is asking to see his requests
 	let request_id = sf_req(request, "request_id", "request_get");
+
+	// function to find the user
+	let findUser = function (reqSend, tnSend) {
+		User.findOne({_id: tnSend.tuid}, function (findingError, userFound) {
+			if (findingError) {
+				callback(500, reqSend, tnSend, null, "Internal Server error", findingError);
+			} else if (isEmpty(userFound)) {
+				callback(403, reqSend, tnSend, null, "Request and Travel notice were found but no user attached found", true);
+			} else {
+				callback(200, reqSend, tnSend, userFound, "Found Request and Travel Notice", false);
+			}
+		});
+
+	};
 
 	// function to find travel notice once request is found
 	let findTravelNotice = function (requestToSend) {
 		TravelNotice.findOne({_id: requestToSend.travel_notice_id}, function (findingError, tnFound) {
 			if (findingError) {
-				callback(500, null, null, "Internal Server error", findingError);
+				callback(500, requestToSend, null, null, "Internal Server error", findingError);
 			} else if (isEmpty(tnFound)) {
-				callback(404, null, null, "Request was found but no travel notice attached found", false);
+				callback(403, requestToSend, null, null, "Request was found but no travel notice attached found", true);
 			} else {
-				callback(200, requestToSend, tnFound, "Found Request and Travel Notice", false);
+				findUser(requestToSend, tnFound);
 			}
 		});
 	};
 
 	ShippingRequest.findOne({_id: request_id}, function (findingError, requestFound) {
 		if (findingError) {
-			callback(500, null, null, "Internal Server error.", findingError);
+			callback(500, null, null, null, "Internal Server error.", findingError);
 		} else if (isEmpty(requestFound)) {
-			callback(404, null, null, "Request not found", true);
+			callback(403, null, null, null, "Request not found", true);
 		} else {
 			// if we find the request, we need to look for the travel notice attached to it
 			findTravelNotice(requestFound);
@@ -740,30 +607,15 @@ router.get("/get", function (request, response, next) {
 	});
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* POST deletes a request and removes it from both user and travel notice
+ * curl -X POST http://localhost:3000/request/delete?request_id=5980bf2562e9a00011e059d6&uid=5980bf0162e9a00011e059d5
+ * */
 
 router.post("/delete", function (request, response, next) {
 	// callback once we get the result
-	let callback = function (status_, request_, travel_notice_, message_, error_) {
-		// callback for responding to send to user
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status_);
-		let server_response;
-		if (error_) {
-			server_response = {success: false, request: request_, travel_notice: travel_notice_, message: message_, error: error_};
-		} else if (isEmpty(request_) || isEmpty(travel_notice_)) {
-			// TODO - This could be successful even when one or both request_ and travel_notice_ are null
-			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, request: request_, travel_notice: travel_notice_, message: message_, error: false};
-		} else {
-			server_response = {success: true, request: request_, travel_notice: travel_notice_, message: message_, error: false};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	let callback = helpers.callbackFormatorSrTnUsr(response);
 
+	// TODO - This doesn't remove the request from the user object
 	// get the request
 	let user_id = sf_req(request, "uid", "request_delete");
 	let request_id = sf_req(request, "request_id", "request_delete");
@@ -775,20 +627,20 @@ router.post("/delete", function (request, response, next) {
 		shipping_request: {success: false}
 	};
 
-	let findUserAndEdit = function() {
-		User.findOne({_id: user_id}, function(findingError, foundUser) {
+	let findUserAndEdit = function () {
+		User.findOne({_id: user_id}, function (findingError, foundUser) {
 			if (findingError) {
 				// we don't move forward if we don't find the user
-				callback(500, null, null, "Internal Server Error", findingError);
+				callback(500, null, null, null, "Internal Server Error", findingError);
 			} else if (isEmpty(foundUser)) {
 				// we don't move forward if we don't find the user
 				successObjectMessage.user = {success: false, message: "user was not found"};
-				callback(404, null, null, {message: successObjectMessage}, true);
+				callback(404, null, null, null, {message: successObjectMessage}, true);
 			} else {
 				let saveUser = function () {
-					foundUser.save(function(savingError, savedUser) {
+					foundUser.save(function (savingError, savedUser) {
 						if (savingError) {
-							callback(500, null, null, "Error occurred while saving the user", savingError);
+							callback(500, null, null, null, "Error occurred while saving the user", savingError);
 						} else {
 							// Find the shipping request once the user is saved
 							findShippingRequest(savedUser);
@@ -797,14 +649,17 @@ router.post("/delete", function (request, response, next) {
 				};
 				// modify the requests ids to delete this request, modify the success object in them eantime
 				for (let i = 0; i < foundUser.requests_ids.length; i++) {
-					if (foundUser.requests_ids[i] === request_id) {
-						foundUser.splice(i, 1);
+					if (foundUser.requests_ids[i] == request_id) {
+						foundUser.requests_ids.splice(i, 1);
 						successObjectMessage.user = {success: true};
 						saveUser();
 						break;
 					}
 					if (i >= foundUser.requests_ids.length - 1) {
-						successObjectMessage.user = {success: false, message: "user did not have the shipping request id"};
+						successObjectMessage.user = {
+							success: false,
+							message: "user did not have the shipping request id"
+						};
 						saveUser();
 					}
 				}
@@ -813,20 +668,27 @@ router.post("/delete", function (request, response, next) {
 	};
 
 	// find the shipping request
-	let findShippingRequest = function () {
+	let findShippingRequest = function (userFoundSaved) {
 		// first find the shipping request
 		ShippingRequest.findOne({_id: request_id}, function (findingError, foundSR) {
 			// delete the shipping request
-			let deleteShippingRequest = function(TN) {
-				ShippingRequest.remove({_id: foundSR._id}, function(deletionError) {
+			let deleteShippingRequest = function (TN) {
+				ShippingRequest.remove({_id: foundSR._id}, function (deletionError) {
 					if (deletionError) {
 						// send a 500 call in case this error happens, they could try it again
-						successObjectMessage.shipping_request = {success: false, message: "deletion error occurred", error: deletionError};
-						callback(500, foundSR, TN, successObjectMessage, true);
+						successObjectMessage.shipping_request = {
+							success: false,
+							message: "deletion error occurred",
+							error: deletionError
+						};
+						callback(500, foundSR, TN, userFoundSaved, successObjectMessage, true);
 					} else {
 						// success message to send that deletion went through
-						successObjectMessage.shipping_request = {success: true, message: "request should be deleted from server"};
-						callback(200, foundSR, TN, successObjectMessage, false);
+						successObjectMessage.shipping_request = {
+							success: true,
+							message: "request should be deleted from server"
+						};
+						callback(200, foundSR, TN, userFoundSaved, successObjectMessage, false);
 					}
 				});
 			};
@@ -841,10 +703,14 @@ router.post("/delete", function (request, response, next) {
 						successObjectMessage.travel_notice = {success: false, message: "Travel notice was not found"};
 						deleteShippingRequest(foundTN);
 					} else {
-						let saveTravel = function() {
+						let saveTravel = function () {
 							foundTN.save(function (savingError, savedTn) {
 								if (savingError) {
-									successObjectMessage.travel_notice = {success: false, message: "saving error occurred", error: savingError};
+									successObjectMessage.travel_notice = {
+										success: false,
+										message: "saving error occurred",
+										error: savingError
+									};
 									// move to final step
 									deleteShippingRequest(foundTN);
 								} else {
@@ -855,15 +721,18 @@ router.post("/delete", function (request, response, next) {
 						};
 
 						// remove this request in the traven notice and then save
-						for (let i = 0; i < foundTN.requests_ids.length; i++){
-							if (foundTN.requests_ids[i] === request_id) {
-								foundTN.splice(i, 1);
+						for (let i = 0; i < foundTN.requests_ids.length; i++) {
+							if (foundTN.requests_ids[i].request_id == request_id) {
+								foundTN.requests_ids.splice(i, 1);
 								successObjectMessage.travel_notice = {success: true};
 								saveTravel();
 								break;
 							}
 							if (i >= foundTN.requests_ids.length - 1) {
-								successObjectMessage.travel_notice = {success: false, message: "travel notice did not have the shipping request id"};
+								successObjectMessage.travel_notice = {
+									success: false,
+									message: "travel notice did not have the shipping request id"
+								};
 								saveTravel();
 							}
 						}
@@ -871,29 +740,28 @@ router.post("/delete", function (request, response, next) {
 				});
 			};
 
-
 			if (findingError) {
 				// send error, we can't keep going if this error occurs
-				callback(500, null, null, "Internal Server Error inside of findShippingRequest", findingError);
+				callback(500, null, null, null, "Internal Server Error inside of findShippingRequest", findingError);
 			} else if (isEmpty(foundSR)) {
 				// send error, we can't keep going if this error occurs
 				successObjectMessage.shipping_request = {success: false, message: "request was not found"};
-				callback(404, null, null, successObjectMessage, true);
+				callback(404, null, null, null, successObjectMessage, true);
 			} else {
 				findTravelNoticeAndEdit();
 			}
-		})
+		});
 	};
 
 	/* actual process gets executed here!!! */
 	let parameters = {
-		user_id: ""+user_id,
-		shipping_request_id: ""+request_id
+		user_id: "" + user_id,
+		shipping_request_id: "" + request_id
 	};
 
 	if (isEmpty(request_id) || isEmpty(user_id)) {
 		// make sure all parameters are given
-		callback(403, null, null, {message:"Request id was not specified", parameters: parameters}, true);
+		callback(403, null, null, {message: "Request id was not specified", parameters: parameters}, true);
 	} else {
 		// find the user, remove the request from the user object
 		findUserAndEdit();
@@ -901,3 +769,71 @@ router.post("/delete", function (request, response, next) {
 });
 
 module.exports = router;
+
+// FROM /SEND ENDPOINT
+/* let callback = function (status_, request_, travel_notice_, message_, error_) {
+ // callback for responding to send to user
+ response.setHeader('Content-Type', 'application/json');
+ response.status(status_);
+ let server_response;
+ if (error_) {
+ server_response = {success: false, request: null, travel_notice: null, message: message_, error: error_};
+ } else if (request_ === null) {
+ // if we get to here that means travel_notice_ is not empty
+ server_response = {success: false, request: null, travel_notice: null, message: message_, error: false};
+ } else {
+ server_response = {
+ success: true,
+ request: request_,
+ travel_notice: travel_notice_,
+ message: message_,
+ error: false
+ };
+ }
+ response.send(JSON.stringify(server_response));
+ }; */
+
+// FROM /DECLINE ENDPOINT
+/* let callback = function (status_, request_, travel_notice_, message_, error_) {
+ response.setHeader('Content-Type', 'application/json');
+ response.status(status_);
+ let server_response;
+ if (error_) {
+ server_response = {success: false, request: null, travel_notice: null, message: message_, error: error_};
+ } else if (request_ === null) {
+ // if we get to here that means travel_notice_ is not empty
+ server_response = {success: false, request: null, travel_notice: null, message: message_, error: false};
+ } else {
+ server_response = {
+ success: true,
+ request: request_,
+ travel_notice: travel_notice_,
+ message: message_,
+ error: false
+ };
+ }
+ response.send(JSON.stringify(server_response));
+ }; */
+
+// FROM ACCEPT ENDPOINT
+/*let callback = function (status_, request_, travel_notice_, message_, error_) {
+ // callback for responding to send to user
+ response.setHeader('Content-Type', 'application/json');
+ response.status(status_);
+ let server_response;
+ if (error_) {
+ server_response = {success: false, request: null, travel_notice: null, message: message_, error: error_};
+ } else if (request_ === null) {
+ // if we get to here that means travel_notice_ is not empty
+ server_response = {success: false, request: null, travel_notice: null, message: message_, error: false};
+ } else {
+ server_response = {
+ success: true,
+ request: request_,
+ travel_notice: travel_notice_,
+ message: message_,
+ error: false
+ };
+ }
+ response.send(JSON.stringify(server_response));
+ }; */

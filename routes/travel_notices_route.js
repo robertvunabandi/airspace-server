@@ -130,11 +130,6 @@ router.post("/add", function (request, response, next) {
 	});
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 router.post("/update", function (request, response, next) {
 	// curl -X POST http://localhost:3000/travel_notice_update?_id=59763c14a6f2640011b97309&tuid=596d0b5626bffc280b32187e&airline=DL&flight_num=1798&item_envelopes=true&item_smbox=true&item_lgbox=true&item_clothing=true&item_other=false&dep_iata=SAN&dep_city=SanDiego&dep_min=45&dep_hour=21&dep_day=1&dep_month=8&dep_year=2017&arr_iata=JFK&arr_city=NewYork&arr_min=14&arr_hour=6&arr_day=2&arr_month=8&arr_year=2017
 	// callback once we get the result
@@ -229,11 +224,6 @@ router.post("/update", function (request, response, next) {
 
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* GET gets one travel notice from the DB
  * curl -X POST http://localhost:3000/travel_notice_get
  * */
@@ -276,11 +266,6 @@ router.get("/get", function (request, response, next) {
 		});
 	}
 });
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* GET gets one travel notice from the DB
  * curl -X GET http://localhost:3000/travel_notice_get_mine?uid=597922c81527c200110fc33e
@@ -330,11 +315,6 @@ router.get("/get_mine", function (request, response, next) {
 		}
 	};
 });
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* POST deletes a travel notice from the DB
  * curl -X POST http://localhost:3000/travel_notice_delete
@@ -562,39 +542,28 @@ router.post("/delete", function (request, response, next) {
 	};
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* See all travel notices from the database
  * curl -X GET http://localhost:3000/travel_notice_all
  * */
 router.get("/all", function (request, response, next) {
 	// callback when result is received
-	let callback = function (status, data, error) {
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status);
-		let server_response;
-		if (error) {
-			server_response = {success: false, data: null, error: error};
-		}
-		else {
-			server_response = {success: true, data: data, error: false};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	let callback = helpers.callbackFormatorData(response);
 
 	// returns a list of all the travel notices currently saved in the database
 	TravelNotice.find({}, function (error, search) {
 		if (error) {
 			// do what to do in case of an error
-			callback(500, null, error);
+			callback(500, null, "Internal Server Error", error);
 		} else {
 			// else send the search
-			callback(200, search, false);
+			callback(200, search, "Success", false);
 		}
 	});
 });
 
 module.exports = router;
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

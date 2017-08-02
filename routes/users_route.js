@@ -76,11 +76,6 @@ router.post('/add', function (request, response, next) {
 	}
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
 /* GET returns the id of the user requested by email
  * curl -X GET http://localhost:3000/user/get?uid=597fa392fb5eaf0011445f91
  * */
@@ -121,11 +116,6 @@ router.get('/get', function (request, response, next) {
 		});
 	}
 });
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* GET update user
  * curl -X GET http://localhost:3000/user_update?
@@ -190,10 +180,6 @@ router.get('/update', function (request, response, next) {
 	});
 });
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 // TODO - Implement function, but this is the least needed for now
 router.get('/delete', function (request, response, next) {
 
@@ -215,11 +201,6 @@ router.get('/delete', function (request, response, next) {
 
 	callback(501, null, "Not yet implemented", true);
 });
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 /* GET login */
 router.get('/login', function (request, response, next) {
@@ -258,3 +239,8 @@ router.get('/login', function (request, response, next) {
 });
 
 module.exports = router;
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
