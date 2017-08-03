@@ -118,7 +118,7 @@ router.get('/get_profile_url', function (request, response, next) {
 	ProfileImageBMP.findOne({user_id: userId}, function (findingError, foundPhotoObject) {
 		if (findingError) {
 			callback(500, null, "Internal Server Error", findingError);
-		} else if (isEmpty(foundImg)) {
+		} else if (isEmpty(foundPhotoObject)) {
 			callback(403, null, "Url not found", true);
 		} else {
 			callback(403, foundPhotoObject.url, "success", false);
@@ -131,21 +131,51 @@ router.post('/request_create', function (request, response, next) {
 	// callback for result
 	let TAG = "/image/request_create"; // for debugging
 	let callback = helpers.callbackFormatorData(response);
-	callback(503, null, "Not Implemented", true);
+
+	// get parameters
+	let requestId = sf_req(request, "request_id", TAG);
+	let url = sf_req(request, "url", TAG);
+	let parameters = {request_id: "" + requestId, url: "" + url};
+
+	let newRequestImg = new RequestImageBMP({
+		request_id: requestId,
+		url: url,
+		date_created: helpers.newDate()
+	});
+
+	if (isEmpty(requestId) || isEmpty(url)) {
+		// send error
+		callback(403, null, `id or url not specified in parameters, given: ${parameters}`, true);
+	} else {
+		// save with url
+		newRequestImg.save(function (savingError, savedRequestImage) {
+			if (savingError) {
+				callback(500, null, "Internal Server Error", savingError);
+			} else {
+				callback(200, savedRequestImage, "success", false);
+			}
+		});
+	}
 });
-router.post('/request_update', function (request, response, next) {
-	// TODO - Implement this endpoint
-	// callback for result
-	let TAG = "/image/request_update"; // for debugging
-	let callback = helpers.callbackFormatorData(response);
-	callback(503, null, "Not Implemented", true);
-});
+
 router.get('/get_request_url', function (request, response, next) {
 	// TODO - Implement this endpoint
 	// callback for result
 	let TAG = "/image/get_request_url"; // for debugging
 	let callback = helpers.callbackFormatorData(response);
-	callback(503, null, "Not Implemented", true);
+
+	let requestId = sf_req(request, "request_id", TAG);
+
+	// find the url
+	RequestImageBMP.findOne({request_id: requestId}, function (findingError, foundPhotoObject) {
+		if (findingError) {
+			callback(500, null, "Internal Server Error", findingError);
+		} else if (isEmpty(foundPhotoObject)) {
+			callback(403, null, "Url not found", true);
+		} else {
+			callback(403, foundPhotoObject.url, "success", false);
+		}
+	});
 });
 
 module.exports = router;
