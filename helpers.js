@@ -96,6 +96,15 @@ let helpers = {
 		console.log(`BODY\n${body}QUERY\n${query}URL\n${request.url}`);
 		log_separator(1);
 	},
+	random: {
+		integer: function(maxValue) {
+			return Math.round(Math.random()*maxValue);
+		},
+		double: function(maxValue, decimalPlaces) {
+			let value = Math.random()*maxValue;
+			return Math.round(value*10**decimalPlaces) / 10**decimalPlaces;
+		}
+	},
 	sf_req: function (request, stringName, tag = null) {
 		/* functions to get variables from requests safely
 		 sf stands for "save from request". Body is favored*/
@@ -133,10 +142,29 @@ let helpers = {
 			let server_response;
 			if (error_) {
 				server_response = {success: false, data: data_, message: message_, error: error_};
-			} else if (data_ === null) {
+			} else if (isEmpty(data_)) {
 				server_response = {success: false, data: data_, message: message_, error: false};
 			} else {
 				server_response = {success: true, data: data_, message: message_, error: false};
+			}
+			setTimeout(function () {
+				// safely send the request
+				HTTPResponse.send(JSON.stringify(server_response));
+			}, 0);
+		};
+	},
+	callbackFormatorDataUsr: function (HTTPResponse) {
+		// creates a callback with the results in order, always include message, success, and error
+		return function (status_, data_, user_, message_, error_) {
+			HTTPResponse.setHeader('Content-Type', 'application/json');
+			HTTPResponse.status(status_);
+			let server_response;
+			if (error_) {
+				server_response = {success: false, data: data_, user:user_, message: message_, error: error_};
+			} else if (isEmpty(data_) || isEmpty(user_)) {
+				server_response = {success: false, data: data_, user:user_, message: message_, error: false};
+			} else {
+				server_response = {success: true, data: data_, user:user_, message: message_, error: false};
 			}
 			setTimeout(function () {
 				// safely send the request

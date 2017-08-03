@@ -21,9 +21,9 @@ const Request = new Schema({
 	//
 	recipient: {type: Object, required: true},
 	deliverer: {type: Object, required: true},
-
 	drop_off_flexibility: {type: String, required: false}, // flexibility of the user that's putting the travel noting
-	pick_up_flexibility: {type: String, required: false} // flexibility of the user that's putting the travel noting
+	pick_up_flexibility: {type: String, required: false}, // flexibility of the user that's putting the travel noting
+	date_created: {type: Object, required: true}
 
 });
 

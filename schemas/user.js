@@ -14,7 +14,11 @@ const User = new Schema({
 	phone: {type: String, required: false},
 	travel_notices_ids: {type:Array, required: false},
 	requests_ids: {type:Array, required: false},
-	chat_collections: {type:Array, required: false}
+	chat_collections: {type:Array, required: false}, // EXTRA TO FIX FOR BUGS
+	trips_taken: {type:Number, required: true},
+	dollars_made: {type:Number, required: true},
+	items_sent: {type:Number, required: true},
+	date_created: {type:Object, required: true},
 });
 
 module.exports = mongoose.model('User', User, "users");

@@ -69,7 +69,8 @@ router.post("/send", function (request, response, next) {
 		item_other_name: itemOtherName,
 		item_total: requestedCount,
 		drop_off_flexibility: sf_req(request, "drop_off_flexibility", "request_send"),
-		pick_up_flexibility: sf_req(request, "pick_up_flexibility", "request_send")
+		pick_up_flexibility: sf_req(request, "pick_up_flexibility", "request_send"),
+		date_created: helpers.newDate()
 	});
 
 	// we need to have at least 1 item requested so throw an error
@@ -373,29 +374,29 @@ router.post("/decline", function (request, response, next) {
  * */
 router.get("/get_from_travel_notice", function (request, response, next) {
 	// callback for responding to send to user
-	let callback = helpers.callbackFormatorSrTn(response);
+	let callback = helpers.callbackFormatorSrTnUsr(response);
 
 	// get required parameters
 	let travel_notice_id = sf_req(request, "travel_notice_id", "request_get_from_travel_notice");
 
 	// send the results
-	let sendResults = function (SRs, TN) {
+	let sendResults = function (SRs, TN, USR) {
 		// sends the results by first checking if the result is empty, if it is, send a 404, otherwise send it
 		if (SRs.length <= 0) {
-			callback(404, SRs, TN, "No request found matching the given travel notice id", false);
+			callback(404, SRs, TN, USR, "No request found matching the given travel notice id", false);
 		} else {
-			callback(200, SRs, TN, "Results found!", false);
+			callback(200, SRs, TN, USR, "Results found!", false);
 		}
 	};
 
 	// find the requests for this travel notice
-	let findAllRequestsForTn = function (foundTravelNotice) {
+	let findAllRequestsForTn = function (foundTravelNotice, foundUser) {
 		// assumes foundTravelNotice is not empty
 		ShippingRequest.find({}, function (findingError, foundSRs) {
 			if (findingError) {
-				callback(500, null, null, "Internal Server Error", findingError);
+				callback(500, null, foundTravelNotice, foundUser, "Internal Server Error", findingError);
 			} else if (isEmpty(foundSRs)) {
-				callback(404, null, foundTravelNotice, "No request found in the database at all", false);
+				callback(404, null, foundTravelNotice, foundUser, "No request found in the database at all", false);
 			} else {
 				// rule out the requests that are bad
 				let RES = [];
@@ -404,26 +405,40 @@ router.get("/get_from_travel_notice", function (request, response, next) {
 						// if the request at index i's travel_notice_id equals the foundTN's id, we add it to RES
 						RES.push(foundSRs[i]);
 						if (i >= foundSRs.length - 1) {
-							sendResults(RES, foundTravelNotice);
+							sendResults(RES, foundTravelNotice, foundUser);
 						}
 					} else if (i >= foundSRs.length - 1) {
-						sendResults(RES, foundTravelNotice);
+						sendResults(RES, foundTravelNotice, foundUser);
 					}
 				}
 			}
 		});
 	};
 
+	let findUserAssociated = function(foundTravelNotice) {
+		User.findOne({_id: foundTravelNotice.tuid}, function (findingError, foundUser) {
+			if (findingError) {
+				callback(500, null, foundTravelNotice, null, "Internal Server Error", findingError);
+			} else if (isEmpty(foundUser)) {
+				callback(403, null, foundTravelNotice, null, "No user found associated with the travel notice", false);
+			} else {
+				// findAllRequests
+				findAllRequestsForTn(foundTravelNotice, foundUser);
+			}
+		});
+
+	};
+
 	// find the travel notice
 	let findTravelNotice = function () {
 		TravelNotice.findOne({_id: travel_notice_id}, function (findingError, foundTN) {
 			if (findingError) {
-				callback(500, null, null, "Internal Server Error", findingError);
+				callback(500, null, null, null, "Internal Server Error", findingError);
 			} else if (isEmpty(foundTN)) {
-				callback(403, null, null, "No travel notice found matches the given travel notice id", false);
+				callback(403, null, null, null, "No travel notice found matches the given travel notice id", false);
 			} else {
-				// findAllRequests
-				findAllRequestsForTn(foundTN);
+				// find the user
+				findUserAssociated(foundTN);
 			}
 		});
 	};

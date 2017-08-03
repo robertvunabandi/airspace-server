@@ -37,7 +37,8 @@ const TravelNotice = new Schema({
 
 	requests_ids: {type: Array, required: false},
 	pending_requests_count: {type: Number, required: true},
-	accepted_requests_count: {type: Number, required: true}
+	accepted_requests_count: {type: Number, required: true},
+	date_created: {type: Object, required: true}
 });
 
 

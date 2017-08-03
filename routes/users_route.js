@@ -44,7 +44,11 @@ router.post('/add', function (request, response, next) {
 		favorite_travel_place: "wherever has the cheapest flights",
 		suitcase_color_integer: 9, // 9 is the index of rainbow
 		travel_notices_ids: [], // intialize both of these as empty arrays
-		requests_ids: [] // intialize both of these as empty arrays
+		requests_ids: [], // intialize both of these as empty arrays
+		trips_taken: helpers.random.integer(100),
+		dollars_made: helpers.random.integer(1000),
+		items_sent: helpers.random.integer(2000),
+		date_created: helpers.newDate()
 		// missing here: dob, phone, travel_notices_ids, requests_ids
 	});
 

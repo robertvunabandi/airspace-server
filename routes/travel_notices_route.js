@@ -225,43 +225,43 @@ router.post("/update", function (request, response, next) {
 });
 
 /* GET gets one travel notice from the DB
- * curl -X POST http://localhost:3000/travel_notice_get
+ * curl -X GET http://localhost:3000/travel_notice/get?travel_notice_id=
  * */
 router.get("/get", function (request, response, next) {
 	// callback once we get the result
-	let callback = function (status_, travel_notice_, message_, error_) {
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status_);
-		let server_response;
-		if (error_) {
-			server_response = {success: false, data: null, message: message_, error: error_};
-		} else if (travel_notice_ === null) {
-			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, data: null, message: message_, error: false};
-		} else {
-			server_response = {success: true, data: travel_notice_, message: message_, error: false};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	let callback = helpers.callbackFormatorDataUsr(response);
 
 	// get the required items to find this travel notice
 	let travelNoticeId = sf_req(request, "travel_notice_id", "travel_notice_get");
 
+	let findUser = function(TN) {
+		User.findOne({_id: TN.tuid}, function(findingError, foundUser) {
+			if (findingError) {
+				callback(500, TN, null, "Internal Server error", findingError);
+			} else if (isEmpty(foundUser)) {
+				callback(403, TN, null, "User associated not found", true);
+			} else {
+				callback(200, TN, foundUser, "success", false);
+			}
+		});
+	};
+
 	if (isEmpty(travelNoticeId)) {
-		callback(403, null, `Some of the parameters were not given. Travel notice id was: ${travelNoticeId}`, true);
+		callback(403, null, null, `Some of the parameters were not given. Travel notice id was: ${travelNoticeId}`, true);
 	} else {
 		// perform the search
 		TravelNotice.findOne({
 			_id: travelNoticeId
 		}, function (error, data) {
 			if (error) {
-				callback(500, null, "Internal Server Error", error);
+				callback(500, null, null, "Internal Server Error", error);
 			} else if (data === null) {
 				// if the data is null, that means that travel notice didn't exist
-				callback(404, null, "Travel Notice not found", false);
+				callback(404, null, null, "Travel Notice not found", false);
 			} else {
 				// if we get the data, we send it to the user
-				callback(200, data, "Successful", false);
+				// but first find the user
+				findUser(data);
 			}
 		});
 	}
@@ -564,6 +564,4 @@ router.get("/all", function (request, response, next) {
 module.exports = router;
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
