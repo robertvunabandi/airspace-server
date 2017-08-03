@@ -3,7 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="dfa04085-23c4-4e48-93e6-23d49a42297d" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/img_hlps.js" afterPath="$PROJECT_DIR$/img_hlps.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/schemas/profile_image.js" afterPath="$PROJECT_DIR$/schemas/profile_image.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -51,7 +51,7 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="img_hlps.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="img_hlps.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/img_hlps.js">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="60">
@@ -100,6 +100,16 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="1590">
               <caret line="143" column="37" lean-forward="false" selection-start-line="143" selection-start-column="37" selection-end-line="143" selection-end-column="37" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="profile_image.js" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/schemas/profile_image.js">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="75">
+              <caret line="5" column="22" lean-forward="false" selection-start-line="5" selection-start-column="22" selection-end-line="5" selection-end-column="22" />
               <folding />
             </state>
           </provider>
@@ -169,7 +179,6 @@
         <option value="$PROJECT_DIR$/helper_image.js" />
         <option value="$PROJECT_DIR$/schemas/notification.js" />
         <option value="$PROJECT_DIR$/app.js" />
-        <option value="$PROJECT_DIR$/schemas/profile_image.js" />
         <option value="$PROJECT_DIR$/schemas/request_image.js" />
         <option value="$PROJECT_DIR$/routes/img_route.js" />
         <option value="$PROJECT_DIR$/schemas/user.js" />
@@ -180,6 +189,7 @@
         <option value="$PROJECT_DIR$/schemas/travel_notice.js" />
         <option value="$PROJECT_DIR$/routes/travel_notices_route.js" />
         <option value="$PROJECT_DIR$/img_hlps.js" />
+        <option value="$PROJECT_DIR$/schemas/profile_image.js" />
       </list>
     </option>
   </component>
@@ -395,12 +405,12 @@
       <option name="presentableId" value="Default" />
       <updated>1500250503255</updated>
       <workItem from="1500250506491" duration="85026000" />
-      <workItem from="1501094381553" duration="68770000" />
+      <workItem from="1501094381553" duration="69427000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="153796000" />
+    <option name="totallyTimeSpent" value="154453000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -785,14 +795,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/schemas/profile_image.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="6" column="14" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="20" selection-end-column="3" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/schemas/request_image.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="75">
@@ -825,22 +827,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/schemas/request.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="375">
-          <caret line="25" column="4" lean-forward="false" selection-start-line="25" selection-start-column="4" selection-end-line="25" selection-end-column="48" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/routes/requests_route.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="386">
-          <caret line="72" column="8" lean-forward="false" selection-start-line="72" selection-start-column="8" selection-end-line="72" selection-end-column="39" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/routes/travel_notices_route.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="285">
@@ -861,14 +847,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="347">
           <caret line="40" column="48" lean-forward="false" selection-start-line="40" selection-start-column="48" selection-end-line="40" selection-end-column="48" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/routes/img_route.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1590">
-          <caret line="143" column="37" lean-forward="false" selection-start-line="143" selection-start-column="37" selection-end-line="143" selection-end-column="37" />
           <folding />
         </state>
       </provider>
@@ -897,6 +875,38 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="60">
           <caret line="4" column="40" lean-forward="false" selection-start-line="4" selection-start-column="40" selection-end-line="4" selection-end-column="40" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/schemas/request.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="375">
+          <caret line="25" column="4" lean-forward="false" selection-start-line="25" selection-start-column="4" selection-end-line="25" selection-end-column="48" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/routes/requests_route.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="386">
+          <caret line="72" column="8" lean-forward="false" selection-start-line="72" selection-start-column="8" selection-end-line="72" selection-end-column="39" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/routes/img_route.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1590">
+          <caret line="143" column="37" lean-forward="false" selection-start-line="143" selection-start-column="37" selection-end-line="143" selection-end-column="37" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/schemas/profile_image.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="75">
+          <caret line="5" column="22" lean-forward="false" selection-start-line="5" selection-start-column="22" selection-end-line="5" selection-end-column="22" />
           <folding />
         </state>
       </provider>
