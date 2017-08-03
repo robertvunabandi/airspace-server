@@ -234,7 +234,8 @@ let helpers = {
 		} else {
 			fxnGood(objectCheck);
 		}
-	}
+	}, /** BELOW ARE VARIABLES */
+
 };
 
 module.exports = helpers;
