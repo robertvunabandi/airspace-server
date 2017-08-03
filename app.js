@@ -43,7 +43,7 @@ connection.on("connected", function () {
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({limit: '16mb', extended: false}));
+app.use(bodyParser.urlencoded({limit: '8mb', extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 

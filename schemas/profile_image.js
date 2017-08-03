@@ -3,8 +3,7 @@ const Schema = mongoose.Schema;
 
 let ProfileImageBMP = new Schema({
 	user_id: {type: String, required: true}, // id of the user that this notification belongs to
-	bmp: {type: Buffer, required: true},
-	content_type: {type: String, required: true},
+	url: {type: Buffer, required: true},
 	date_saved: {type: Object, required: true}
 });
 
