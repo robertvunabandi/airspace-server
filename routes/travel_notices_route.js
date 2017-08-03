@@ -76,7 +76,8 @@ router.post("/add", function (request, response, next) {
 		arr_month: sf_req_int(request, "arr_month", "travel_notice_add"),
 		arr_year: sf_req_int(request, "arr_year", "travel_notice_add"),
 		pending_requests_count: 0, // when we just create a fresh new travel notice, we don't have any request to it
-		accepted_requests_count: 0
+		accepted_requests_count: 0,
+		date_created: helpers.newDate()
 		// requests_ids: [] this should be null (or an empty array) since it's a fresh new travel_notice
 	});
 
