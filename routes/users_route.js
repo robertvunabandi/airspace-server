@@ -47,7 +47,7 @@ router.post('/add', function (request, response, next) {
 		requests_ids: [], // intialize both of these as empty arrays
 		trips_taken: helpers.random.integer(100),
 		dollars_made: helpers.random.integer(1000),
-		items_sent: helpers.random.integer(2000),
+		items_sent: helpers.random.integer(200),
 		date_created: helpers.newDate()
 		// missing here: dob, phone, travel_notices_ids, requests_ids
 	});
