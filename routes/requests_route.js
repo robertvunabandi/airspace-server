@@ -73,6 +73,20 @@ router.post("/send", function (request, response, next) {
 		date_created: helpers.newDate()
 	});
 
+	let sendNotification = function(TVL, SRT, USR) {
+		let n = new Notification({
+			user_id: TVL.tuid,
+			message: `You received a new request from ${USR.f_name} ${USR.l_name}`, // TODO - ADD A USER NAME HERE (FROM XYZ)
+			sent: false,
+			date_received: helpers.newDate(),
+			travel_notice_from_id: TVL._id,
+			request_from_id: SRT._id,
+			user_from_id: USR._id,
+			action: 10
+		});
+		n.save();
+	};
+
 	// we need to have at least 1 item requested so throw an error
 	if (requestedCount < 1 || isNaN(requestedCount)) {
 		// will throw error if not found in request
@@ -115,19 +129,8 @@ router.post("/send", function (request, response, next) {
 									// final callback
 									callback(201, savedRequest, savedTn, userSaved, "Saved successfully", false);
 
-									let n = new Notification({
-										user_id: userFound._id,
-										message: `You received a new request from ${userSaved.f_name} ${userSaved.l_name}`, // TODO - ADD A USER NAME HERE (FROM XYZ)
-										sent: false,
-										date_received: helpers.newDate(),
-										travel_notice_from_id: savedTn._id,
-										request_from_id: savedRequest._id,
-										user_from_id: ruid,
-										action: 10
-									});
-									n.save(function (savingError, savedNotification) {
-
-									});
+									// FINAL SEND NOTIFICATION
+									sendNotification(savedTn, savedRequest, userSaved);
 								}
 							});
 						}

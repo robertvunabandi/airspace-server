@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const Request = new Schema({
 	travel_notice_id: {type: String, required: true}, // id of the user that puts out the travel notice
-	ruid: {type: String, required: true}, // id of the user that puts out the travel notice
+	ruid: {type: String, required: true}, // id of the user that sent this request
 	action: {type: Number, required: true}, // 0 means sending, 1 means receiving
 	status: {type: Number, required: true}, // whether this request has been accepted or not
 	// 0: pending, 1: accepted, 2: declined, 3: invalid

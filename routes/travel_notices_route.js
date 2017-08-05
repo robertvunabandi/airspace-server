@@ -1,4 +1,5 @@
-const express = require('express'); const router = express.Router();
+const express = require('express');
+const router = express.Router();
 // Schemas
 const User = require('../schemas/user.js');
 const TravelNotice = require('../schemas/travel_notice.js');
@@ -6,14 +7,20 @@ const ShippingRequest = require('../schemas/request.js');
 const Notification = require('../schemas/notification.js');
 const MessageCreator = require('../schemas/message.js');
 // to make http calls
-const http = require('http'); const REQUEST_HTTP = require('request');
+const http = require('http');
+const REQUEST_HTTP = require('request');
 // helpers
 const helpers = require('../helpers.js');
 /* debugging functions */
-const LOG = helpers.LOG; const log_separator = helpers.log_separator; const log_requested_items = helpers.log_requested_items;
-const sf_req = helpers.sf_req; const sf_req_bool = helpers.sf_req_bool; const sf_req_int = helpers.sf_req_int;
-const isEmpty = helpers.isEmpty; const isEmptyArray = helpers.isEmptyArray; const isANumber = helpers.isANumber;
-
+const LOG = helpers.LOG;
+const log_separator = helpers.log_separator;
+const log_requested_items = helpers.log_requested_items;
+const sf_req = helpers.sf_req;
+const sf_req_bool = helpers.sf_req_bool;
+const sf_req_int = helpers.sf_req_int;
+const isEmpty = helpers.isEmpty;
+const isEmptyArray = helpers.isEmptyArray;
+const isANumber = helpers.isANumber;
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -235,8 +242,8 @@ router.get("/get", function (request, response, next) {
 	// get the required items to find this travel notice
 	let travelNoticeId = sf_req(request, "travel_notice_id", "travel_notice_get");
 
-	let findUser = function(TN) {
-		User.findOne({_id: TN.tuid}, function(findingError, foundUser) {
+	let findUser = function (TN) {
+		User.findOne({_id: TN.tuid}, function (findingError, foundUser) {
 			if (findingError) {
 				callback(500, TN, null, "Internal Server error", findingError);
 			} else if (isEmpty(foundUser)) {
@@ -318,229 +325,210 @@ router.get("/get_mine", function (request, response, next) {
 });
 
 /* POST deletes a travel notice from the DB
- * curl -X POST http://localhost:3000/travel_notice_delete
- * curl -X POST http://localhost:3000/travel_notice_delete?tuid=5967d57baf06e6606c442961&travel_notice_uid=<PLACE HERE>
+ * curl -X POST http://localhost:3000/travel_notice/delete
+ * curl -X POST http://localhost:3000/travel_notice/delete?user_id=5983a3583810430011fd4639&travel_notice_id=5984b65e1c19f30011814665
  * */
 router.post("/delete", function (request, response, next) {
 
-	// callback once we get the result
-	let callback = function (status_, travel_notice_, message_, error_) {
-		response.setHeader('Content-Type', 'application/json');
-		response.status(status_);
-		let server_response;
-		if (error_) {
-			server_response = {success: false, data: null, message: message_, error: error_};
-		} else if (travel_notice_ === null) {
-			// if we get to here that means travel_notice_ is not empty
-			server_response = {success: false, data: null, message: message_, error: false};
-		} else {
-			server_response = {success: true, data: travel_notice_, message: message_, error: false};
-		}
-		response.send(JSON.stringify(server_response));
-	};
+	// callback once we get the result to return the travel notice deleted
+	let callback = helpers.callbackFormatorData(response);
 
 	// remove the travel notice
 	let travel_notice_id = sf_req(request, "travel_notice_id", "travel_notice_delete");
 	let user_id = sf_req(request, "user_id", "travel_notice_delete");
 	// put all in parameters
-	let parameters = {travel_notice_id: ""+travel_notice_id, user_id: ""+user_id};
+	let parameters = {travel_notice_id: "" + travel_notice_id, user_id: "" + user_id};
 
-	/* CHECKING CONDITIONS, SOME FXNs MAY BE INSIDE OTHERS */
-	// check if parameters are empty
-	if (isEmpty(travel_notice_id) || isEmpty(user_id)) {
-		callback(403, null, {message:"some or all parameters are missing", parameters:parameters}, true);
-	} else {
-		getUser();
-	}
+	let USER_OBJECT = null;
+	let TRAVEL_NOTICE_OBJECT = null;
+	let REQUEST_IDS_ARRAY = [];
+	// for notifications
+	let dateFlightDeparture;
 
-	let deleteTravelNotice = function() {
-		// removes the travel notice, make sure this is done only if the travel notice actually exists
-		TravelNotice.remove({_id:travel_notice_id}, function(deletionError, results){
-			// TODO - Do something here, maybe log it??
+	// wipe all the requests
+	let wipeRequests = function () {
+		console.log(`Deletion of requests started`);
+		for (let i = 0; i < REQUEST_IDS_ARRAY.length; i++) {
+			ShippingRequest.remove({_id: REQUEST_IDS_ARRAY[i].request_id}, function (deletionError, dataDeleted) {
+				// log it for debugging purposes
+				console.log(`Delete request (ID:${REQUEST_IDS_ARRAY[i]}) attempt, results:`);
+				console.log(deletionError, dataDeleted);
+				// at the end, log completion
+				if (i >= REQUEST_IDS_ARRAY.length - 1) {
+					setTimeout(function () {
+						console.log(`Deletion of requests terminated`);
+					}, 100);
+				}
+			});
+		}
+	};
+
+	// delete the request itself
+	let deleteTravelNotice = function () {
+		TravelNotice.remove({_id: travel_notice_id}, function(deletionError, data) {
+			wipeRequests();
+			if (deletionError) {
+				callback(500, null, "Internal Server Error occurred while deleting your travel notice", deletionError);
+			} else {
+				callback(200, data, "Success deletion", false);
+			}
 		});
 	};
 
-	// get user to confirm that user exists, don't move forward if not
-	let getUser = function(){
-		User.findOne({_id:user_id}, function(findingUSRError, userFound) {
+	// delete the travel notice in the user
+	let deleteTravelNoticeInUser = function () {
+		// remove it from the travel notice
+		let MAX = USER_OBJECT.travel_notices_ids.length;
+
+		if (MAX === 0) {
+			deleteTravelNotice();
+		} else {
+			// save user
+			let saveUser = function() {
+				USER_OBJECT.save(function (savingError, savedUser) {
+					if (savingError) {
+						console.log(`MAJOR ERROR IN SAVING USER: ${USER_OBJECT}`); console.log(savingError);
+					} else {
+						// send a notification
+						let n = new Notification({
+							user_id: user_id,
+							message: `You have successfully deleted your travel notice from ${TRAVEL_NOTICE_OBJECT.dep_city} to ${TRAVEL_NOTICE_OBJECT.arr_city} departing on ${dateFlightDeparture}. It should now be removed from our database.`,
+							sent: false,
+							date_received: helpers.newDate(),
+							action: 30
+						});
+						n.save();
+					}
+					deleteTravelNotice();
+				});
+			};
+
+			for (let i = 0; i < MAX; i++) {
+				if (USER_OBJECT.travel_notices_ids[i] == travel_notice_id) {
+					USER_OBJECT.travel_notices_ids.splice(i, 1);
+					saveUser();
+					break;
+				} else if (i >= MAX - 1) {
+					deleteTravelNotice();
+				}
+			}
+		}
+	};
+
+	// delete the requests in the travel notice
+	let deleteRequestIdsForEachUser = function () {
+		let breakout = false;
+		let MAX = REQUEST_IDS_ARRAY.length;
+		let deleteUserAtIndex = function (index) {
+			return new Promise(function (resolve, reject) {
+				let sendResponse = function () {
+					// resolve if there's more index to go, reject when we reach the max value - 1
+					if (index < MAX - 1) resolve(index + 1);
+					else reject(false);
+				};
+				// find the request
+				ShippingRequest.findOne({_id: REQUEST_IDS_ARRAY[index]}, function (findingError, requestFound) {
+					if (findingError || isEmpty(requestFound)) {
+						sendResponse();
+					} else {
+						// find the user that sent that request
+						User.findOne({_id: requestFound.ruid}, function (fError, uFound) {
+							let saveUser = function () {
+								uFound.save(function (savingError, uSaved) {
+									if (savingError) {
+										console.log(`Error while saving user (ID:${uFound._id}) for delete request id (ID:${REQUEST_IDS_ARRAY[index]}) in travel_notice/delete`);
+									} else {
+										let n = new Notification({
+											user_id: uSaved._id,
+											message: `${USER_OBJECT.f_name} ${USER_OBJECT.l_name} deleted the travel notice you sent for the flight from ${TRAVEL_NOTICE_OBJECT.dep_city} to ${TRAVEL_NOTICE_OBJECT.arr_city} departing on ${dateFlightDeparture}. So, your request has been deleted. Sorry for the inconvenience.`,
+											sent: false,
+											date_received: helpers.newDate(),
+											user_from_id: USER_OBJECT._id,
+											action: 32
+										});
+										n.save();
+									}
+									sendResponse();
+								});
+							};
+							if (findingError || isEmpty(requestFound)) {
+								sendResponse();
+							} else {
+								// remove that request from this user
+								for (let i = 0; i < uFound.requests_ids; i++) {
+									if (uFound.requests_ids[i] == REQUEST_IDS_ARRAY[index]) {
+										uFound.requests_ids.splice(i, 1);
+										saveUser();
+										break;
+									} else if (i >= uFound.requests_ids - 1) sendResponse();
+								}
+							}
+						});
+					}
+				});
+			});
+		};
+
+		if (MAX === 0) {
+			deleteTravelNoticeInUser();
+		} else {
+			for (q = 0; q < MAX; q++) {
+				deleteUserAtIndex(q).then(function (response) {
+					console.log(`not done deleting. Now index ${response}`);
+				}, function (error) {
+					deleteTravelNoticeInUser();
+				});
+			}
+		}
+	};
+
+	let getUser = function () {
+		User.findOne({_id: user_id}, function (findingUSRError, userFound) {
+			// find the travel notice
+			let findTravelNotice = function () {
+				TravelNotice.findOne({_id: travel_notice_id}, function (findingTNError, tvlFound) {
+					if (findingTNError) {
+						callback(500, null, "Internal Server Error", findingTNError);
+					} else if (isEmpty(tvlFound)) {
+						callback(403, null, "Travel notice doesn't exists", true);
+					} else {
+						TRAVEL_NOTICE_OBJECT = tvlFound;
+						REQUEST_IDS_ARRAY = REQUEST_IDS_ARRAY.concat(TRAVEL_NOTICE_OBJECT.requests_ids);
+						let mm = TRAVEL_NOTICE_OBJECT.dep_month < 10 ? `0${TRAVEL_NOTICE_OBJECT.dep_month}` : `${TRAVEL_NOTICE_OBJECT.dep_month}`;
+						let dd = TRAVEL_NOTICE_OBJECT.dep_day < 10 ? `0${TRAVEL_NOTICE_OBJECT.dep_day}` : `${TRAVEL_NOTICE_OBJECT.dep_day}`;
+						let yyyy = TRAVEL_NOTICE_OBJECT.dep_year;
+						dateFlightDeparture = `${mm}/${dd}/${yyyy}`;
+						// safely delete the request for each users
+						setTimeout(function () {
+							deleteRequestIdsForEachUser();
+						}, 0);
+					}
+				});
+			};
+
+			/* START */
 			if (findingUSRError) {
 				callback(500, null, "Internal Server Error", findingUSRError);
 			} else if (isEmpty(userFound)) {
 				callback(403, null, "User not found, one may not delete a travel notice", true);
 			} else {
-				let saveUser = function() {
-					userFound.save(function(savingError, userSaved) {
-						// empty function here, if needed will change
-					});
-				};
-				let getTravelNotice = function(indexRemoveInUser) {
-					TravelNotice.findOne({_id: travel_notice_id}, function (findingTNError, foundTN) {
-						if (findingTNError) {
-							callback(500, null, "Internal Server Error", findingTNError);
-						} else if (isEmpty(foundTN)) {
-							callback(403, null, "Travel notice not found, may not be deleted if it doesn't exist", true);
-							// remove the travel notice inside of the user and then save
-							userFound.travel_notices_ids.splice(indexRemoveInUser, 1);
-							saveUser();
-						} else {
-							// remove the travel notice inside of the user and then save
-							userFound.travel_notices_ids.splice(indexRemoveInUser, 1);
-							saveUser();
-							/* ACTIONS, SOME FXNs MAY BE INSIDE OTHERS */
-							let requestIdsToRemove = [];
-							// remove each request one by one, add the ids to the array
-							let removeRequests = function(boolAction) {
-								if (boolAction) {
-									callback(201, foundTN, "Travel notice should be deleted, but there may be errors", false);
-									// delete each requests indivually
-									deleleRequests(requestIdsToRemove, foundTN, userFound);
-								} else {
-									// here it's good, we already remove it from the user, and now we just need
-									// to remove the travel notice itself
-									callback(201, foundTN, "Travel notice should be deleted", false);
-									deleteTravelNotice();
-								}
-							};
-							let findRequests = function(){
-								requestIdsToRemove = requestIdsToRemove.concat(foundTN.requests_ids);
-								// if the length is greater than 0, then we remove each one one by one which is GOOD!
-								removeRequests(requestIdsToRemove.length > 0);
-							};
-						}
-					});
-				};
-				// inside of user, check if this travel notice exist, don't move forward if not
-				let findTnIdInUser = function() {
-					for (let i = 0; i < userFound.travel_notices_ids.length; i++) {
-						if (userFound.travel_notices_ids[i] == travel_notice_id) {
-							// get travel notice if we find the id inside of the travel notices
-							getTravelNotice(i);
-							break;
-						} else if (i >= userFound.travel_notices_ids.length - 1) {
-							callback(403, null, "Travel notice not created by user", true);
-						}
-					}
-				};
-
-				// get the travel notice, don't move forward if travel notice does not exist
-				findTnIdInUser();
+				USER_OBJECT = userFound;
+				// find the travel notice
+				setTimeout(function () {
+					findTravelNotice();
+				}, 0);
 			}
 		});
 	};
 
-	// get all the users and for each user, remove the requests given inside of requestIdsToRemove
-	let deleleRequests = function(requestIdArray, foundTn, foundUSR) {
-		// - Get the date
-		let mm = foundTn.dep_month < 10 ? `0${foundTn.dep_month}` : `${foundTn.dep_month}`;
-		let dd = foundTn.dep_day < 10 ? `0${foundTn.dep_day}` : `${foundTn.dep_day}`;
-		let yyyy = foundTn.dep_year;
-		let dateFlightDeparture = `${mm}/${dd}/${yyyy}`;
-		let requestArraySuccess = [];
-		// initialize this array as empty everywhere
-		for (let j = 0; j < requestIdArray.length; j++) {
-			requestArraySuccess.push(null);
-		}
-		// start the deletion
-		for (let i = 0; i < requestIdArray.length; i++) {
-			let conclude = function() {
-				if (i >= requestIdArray.length - 1) {
-					console.log("====================================");
-					console.log("=Last=Call=To=travel_notice_delete==");
-					console.log("* * * * * * * * * * * * * * * * * * ");
-					console.log(requestArraySuccess);
-					console.log("* * * * * * * * * * * * * * * * * * ");
-					console.log(request.uri);
-					console.log("* * * * * * * * * * * * * * * * * * ");
-					console.log("====================================");
-					// delete request
-					deleteTravelNotice();
-					// send notification
-					// - create the notification
-					let n = new Notification({
-						user_id: user_id,
-						message: `You have successfully deleted your travel notice from ${foundTn.dep_city} to ${foundTn.arr_city} departing on ${dateFlightDeparture}`,
-						sent: false,
-						date_received: helpers.newDate(),
-						action: 30
-					});
-					// - send the notification
-					n.save();
-				};
-			};
-			// this list is made of objects {user_id: <Obj>, request_id: <Obj>}
-			let srId = requestIdArray[i].request_id;
-			// find the request
-			ShippingRequest.findOne({_id:srId}, function(findingSRError, srFound) {
-				// if (err) {} else if (isEmpty()) {} else {}
-				if (findingSRError) {
-					// if an error occurs, we do nothing
-					requestArraySuccess[i] = {success:false, error:"findingSRError"};
-					conclude();
-				} else if (isEmpty(srFound)) {
-					// if we don't find it, we do nothing
-					requestArraySuccess[i] = {success:false, error:"Request not found"};
-					conclude();
-				} else {
-					// if we find it, we do stuffs
-					let deleteRequest = function(){
-						ShippingRequest.remove({_id:srFound._id}, function(deletionError) {
-							if (deletionError) {
-								requestArraySuccess[i].error += " + deletionError";
-							} else {
-								requestArraySuccess[i].error += " - request should be deleted";
-							}
+	/* START MAIN */
 
-							// then send a notification
-							let n = new Notification({
-								user_id: srFound.ruid,
-								message: `${foundUSR.f_name} ${foundUSR.l_name} deleted the request you sent for the flight from ${foundTn.dep_city} to ${foundTn.arr_city} departing on ${dateFlightDeparture}`, // TODO - ADD A USER NAME HERE (FROM XYZ)
-								sent: false,
-								date_received: helpers.newDate(),
-								user_from_id: foundTn.tuid,
-								action: 32
-							});
-							n.save();
-							conclude();
-						});
-					};
-					// find the user associated with it
-					User.findOne({_id:srFound.ruid}, function(findingUSRError, userFound) {
-						if (findingUSRError) {
-							requestArraySuccess[i] = {success:false, error:"findingUSRError"};
-							deleteRequest();
-						} else if (isEmpty(userFound)) {
-							requestArraySuccess[i] = {success:false, error:"User not found"};
-							deleteRequest();
-						} else {
-							// TODO - Check, one of either user or tn has an object instead of a request string in request ids
-							// delete request in user
-							for (let k = 0; k < userFound.requests_ids.length; k++) {
-								if (userFound.requests_ids[i] == srId) {
-									userFound.requests_ids.splice(i, 1);
-									userFound.save(function(savingError) {
-										// then delete request
-										if (savingError) {
-											requestArraySuccess[i] = {success:false, error:"User saving error"};
-											deleteRequest();
-										} else {
-											requestArraySuccess[i] = {success:true, error:""};
-											deleteRequest();
-										}
-									});
-									break;
-								} else if (k >= userFound.requests_ids.length - 1) {
-									// then delete request
-									requestArraySuccess[i] = {success:true, error:"User doesn't have request"};
-									deleteRequest();
-								}
-							}
-
-						}
-					});
-				}
-			});
-		}
-	};
+	// check if parameters are empty
+	if (isEmpty(travel_notice_id) || isEmpty(user_id)) {
+		callback(403, null, {message: "some or all parameters are missing", parameters: parameters}, true);
+	} else {
+		getUser();
+	}
 });
 
 /* See all travel notices from the database
