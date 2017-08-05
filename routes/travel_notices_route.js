@@ -326,7 +326,7 @@ router.get("/get_mine", function (request, response, next) {
 
 /* POST deletes a travel notice from the DB
  * curl -X POST http://localhost:3000/travel_notice/delete
- * curl -X POST http://localhost:3000/travel_notice/delete?user_id=5983a3583810430011fd4639&travel_notice_id=5984b65e1c19f30011814665
+ * curl -X POST http://localhost:3000/travel_notice/delete?user_id=5985324e1aa22c0011a7b48f&travel_notice_id=59853650fe730f0011f67c0f
  * */
 router.post("/delete", function (request, response, next) {
 
@@ -352,7 +352,7 @@ router.post("/delete", function (request, response, next) {
 			ShippingRequest.remove({_id: REQUEST_IDS_ARRAY[i].request_id}, function (deletionError, dataDeleted) {
 				// log it for debugging purposes
 				console.log(`Delete request (ID:${REQUEST_IDS_ARRAY[i]}) attempt, results:`);
-				console.log(deletionError, dataDeleted);
+				console.log(deletionError, dataDeleted.n);
 				// at the end, log completion
 				if (i >= REQUEST_IDS_ARRAY.length - 1) {
 					setTimeout(function () {
@@ -365,7 +365,7 @@ router.post("/delete", function (request, response, next) {
 
 	// delete the request itself
 	let deleteTravelNotice = function () {
-		TravelNotice.remove({_id: travel_notice_id}, function(deletionError, data) {
+		TravelNotice.remove({_id: travel_notice_id}, function (deletionError, data) {
 			wipeRequests();
 			if (deletionError) {
 				callback(500, null, "Internal Server Error occurred while deleting your travel notice", deletionError);
@@ -384,10 +384,11 @@ router.post("/delete", function (request, response, next) {
 			deleteTravelNotice();
 		} else {
 			// save user
-			let saveUser = function() {
+			let saveUser = function () {
 				USER_OBJECT.save(function (savingError, savedUser) {
 					if (savingError) {
-						console.log(`MAJOR ERROR IN SAVING USER: ${USER_OBJECT}`); console.log(savingError);
+						console.log(`MAJOR ERROR IN SAVING USER: ${USER_OBJECT}`);
+						console.log(savingError);
 					} else {
 						// send a notification
 						let n = new Notification({
@@ -417,7 +418,7 @@ router.post("/delete", function (request, response, next) {
 
 	// delete the requests in the travel notice
 	let deleteRequestIdsForEachUser = function () {
-		let breakout = false;
+
 		let MAX = REQUEST_IDS_ARRAY.length;
 		let deleteUserAtIndex = function (index) {
 			return new Promise(function (resolve, reject) {
@@ -426,46 +427,69 @@ router.post("/delete", function (request, response, next) {
 					if (index < MAX - 1) resolve(index + 1);
 					else reject(false);
 				};
-				// find the request
-				ShippingRequest.findOne({_id: REQUEST_IDS_ARRAY[index]}, function (findingError, requestFound) {
-					if (findingError || isEmpty(requestFound)) {
-						sendResponse();
-					} else {
-						// find the user that sent that request
-						User.findOne({_id: requestFound.ruid}, function (fError, uFound) {
-							let saveUser = function () {
-								uFound.save(function (savingError, uSaved) {
-									if (savingError) {
-										console.log(`Error while saving user (ID:${uFound._id}) for delete request id (ID:${REQUEST_IDS_ARRAY[index]}) in travel_notice/delete`);
-									} else {
-										let n = new Notification({
-											user_id: uSaved._id,
-											message: `${USER_OBJECT.f_name} ${USER_OBJECT.l_name} deleted the travel notice you sent for the flight from ${TRAVEL_NOTICE_OBJECT.dep_city} to ${TRAVEL_NOTICE_OBJECT.arr_city} departing on ${dateFlightDeparture}. So, your request has been deleted. Sorry for the inconvenience.`,
-											sent: false,
-											date_received: helpers.newDate(),
-											user_from_id: USER_OBJECT._id,
-											action: 32
-										});
-										n.save();
-									}
-									sendResponse();
-								});
-							};
+				let requestId;
+				try {
+					let requestId = REQUEST_IDS_ARRAY[index].request_id;
+					if (!isEmpty(requestId)) {
+						// find the request
+						ShippingRequest.findOne({_id: requestId}, function (findingError, requestFound) {
+
 							if (findingError || isEmpty(requestFound)) {
 								sendResponse();
 							} else {
-								// remove that request from this user
-								for (let i = 0; i < uFound.requests_ids; i++) {
-									if (uFound.requests_ids[i] == REQUEST_IDS_ARRAY[index]) {
-										uFound.requests_ids.splice(i, 1);
-										saveUser();
-										break;
-									} else if (i >= uFound.requests_ids - 1) sendResponse();
-								}
+								// find the user that sent that request
+								User.findOne({_id: requestFound.ruid}, function (fError, uFound) {
+									let saveUser = function () {
+										uFound.save(function (savingError, uSaved) {
+											if (savingError) {
+												console.log(`Error while saving user (ID:${uFound._id}) for delete request id (ID:${requestId}) in travel_notice/delete`);
+											} else {
+												console.log(`Saved successfully for user (ID:${uFound._id}) for delete request id (ID:${requestId}) in travel_notice/delete`);
+												let n = new Notification({
+													user_id: uSaved._id,
+													message: `${USER_OBJECT.f_name} ${USER_OBJECT.l_name} deleted the travel notice you sent for the flight from ${TRAVEL_NOTICE_OBJECT.dep_city} to ${TRAVEL_NOTICE_OBJECT.arr_city} departing on ${dateFlightDeparture}. So, your request has been deleted. Sorry for the inconvenience.`,
+													sent: false,
+													date_received: helpers.newDate(),
+													user_from_id: USER_OBJECT._id,
+													action: 32
+												});
+												n.save();
+											}
+											sendResponse();
+										});
+									};
+
+									if (!isEmpty(findingError) || isEmpty(requestFound)) {
+										sendResponse();
+									} else {
+										// remove that request from this user
+										if (uFound.requests_ids.length <= 1) {
+											sendResponse();
+										} else {
+											console.log(uFound);
+											for (let i = 0; i < uFound.requests_ids.length; i++) {
+												if (uFound.requests_ids[i].toString() == requestId.toString()) {
+													uFound.requests_ids.splice(i, 1);
+													saveUser();
+													break;
+												} else if (i >= uFound.requests_ids.length - 1) {
+													sendResponse();
+												}
+											}
+										}
+
+
+									}
+								});
 							}
 						});
+					} else {
+						sendResponse();
 					}
-				});
+				} catch (e) {
+					console.log(e);
+					sendResponse();
+				}
 			});
 		};
 
