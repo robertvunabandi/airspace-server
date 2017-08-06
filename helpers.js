@@ -97,8 +97,8 @@ let helpers = {
 		log_separator(1);
 	},
 	random: {
-		integer: function(maxValue) {
-			return Math.round(Math.random()*maxValue);
+		integer: function(maxValueInclusive) {
+			return Math.round(Math.random()*maxValueInclusive);
 		},
 		double: function(maxValue, decimalPlaces) {
 			let value = Math.random()*maxValue;

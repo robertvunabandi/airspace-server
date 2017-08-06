@@ -42,7 +42,7 @@ router.post('/add', function (request, response, next) {
 		email: sf_req(request, "email", "new_user"),
 		location: "the best place on earth",
 		favorite_travel_place: "wherever has the cheapest flights",
-		suitcase_color_integer: 9, // 9 is the index of rainbow
+		suitcase_color_integer: helpers.random.integer(9), // 9 is the index of rainbow
 		travel_notices_ids: [], // intialize both of these as empty arrays
 		requests_ids: [], // intialize both of these as empty arrays
 		trips_taken: helpers.random.integer(100),
