@@ -74,9 +74,13 @@ router.post("/send", function (request, response, next) {
 	});
 
 	let sendNotification = function(TVL, SRT, USR) {
+		let departureDay = TVL.dep_day < 10 ? "0"+TVL.dep_day : ""+TVL.dep_day;
+		let departureMonth = TVL.dep_month < 10 ? "0"+TVL.dep_month : ""+TVL.dep_month;
+		let departureYear = TVL.dep_year;
+
 		let n = new Notification({
 			user_id: TVL.tuid,
-			message: `You received a new request from ${USR.f_name} ${USR.l_name}`, // TODO - ADD A USER NAME HERE (FROM XYZ)
+			message: `You received a new request from ${USR.f_name} ${USR.l_name} for your flight from ${TVL.dep_iata} to ${TVL.arr_iata} departing on ${departureMonth}/${departureDay}/${departureYear}`,
 			sent: false,
 			date_received: helpers.newDate(),
 			travel_notice_from_id: TVL._id,
