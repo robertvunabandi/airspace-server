@@ -16,7 +16,7 @@ const isEmpty = helpers.isEmpty; const isEmptyArray = helpers.isEmptyArray; cons
 
 /* POST new user into database
  * curl -X POST http://localhost:3000/user_add?f_name=temporary&l_name=user&email=temp@orary.user
- * curl -X POST http://localhost:3000/user_add?f_name=dumb&l_name=dumb&email=dumb@dumb.dumb
+ * curl -X POST http://localhost:3000/user/add?f_name=dumb&l_name=dumb&email=dumb@dumb.dumb
  *
  * */
 router.post('/add', function (request, response, next) {
@@ -42,12 +42,17 @@ router.post('/add', function (request, response, next) {
 	// make names uppercase first letter
 	fName = fName.substring(0, 1).toUpperCase() + fName.substring(1);
 	lName = lName.substring(0, 1).toUpperCase() + lName.substring(1);
+	let phone_ = "";
+	for (let ix = 0; ix < 11; ix++){
+		phone_ += ""+helpers.random.integer(9);
+	}
 
 	// get the user
 	let newUser = new User({
 		f_name: fName,
 		l_name: lName,
 		email: _email,
+		phone: phone_,
 		location: "the best place on earth",
 		favorite_travel_place: "wherever has the cheapest flights",
 		suitcase_color_integer: helpers.random.integer(9), // 9 is the index of rainbow
@@ -60,8 +65,10 @@ router.post('/add', function (request, response, next) {
 		// missing here: dob, phone, travel_notices_ids, requests_ids
 	});
 
-	if (fName || lName || _email) {
-		callback(403, "Some or all of the parameters were not entered. Please enter all informations.", null, true);
+	let parameters = {f_name: ""+fName, l_name: ""+lName, email:""+_email};
+
+	if (isEmpty(fName) || isEmpty(lName) || isEmpty(_email)) {
+		callback(403, `Some or all of the parameters were not entered. Please enter all informations. Given ${parameters}`, null, true);
 	} else {
 		/* check if user exists in database just by email first,
 		 if yes, send an error that user exists, if no, save that user */

@@ -729,6 +729,7 @@ router.post("/delete", function (request, response, next) {
 							message: "request should be deleted from server"
 						};
 						callback(200, foundSR, TN, userFoundSaved, successObjectMessage, false);
+						sendNotificationToTraveller(foundSR, TN, userFoundSaved);
 					}
 				});
 			};
@@ -801,6 +802,20 @@ router.post("/delete", function (request, response, next) {
 				findTravelNoticeAndEdit();
 			}
 		});
+	};
+
+	let sendNotificationToTraveller = function(SR, TN, USRFrom) {
+		let n = new Notification({
+			user_id: TN.tuid,
+			message: `${USRFrom.f_name} ${USRFrom.l_name} sent you a request, but he just cancelled it. We apologize for the inconvenience. `, // TODO - Add a to user name (TO XYZ)
+			sent: false,
+			date_received: helpers.newDate(),
+			travel_notice_from_id: TN._id,
+			request_from_id: SR._id,
+			user_from_id: USRFrom._id,
+			action: 13
+		});
+		n.save();
 	};
 
 	/* actual process gets executed here!!! */
