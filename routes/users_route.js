@@ -43,7 +43,7 @@ router.post('/add', function (request, response, next) {
 	fName = fName.substring(0, 1).toUpperCase() + fName.substring(1);
 	lName = lName.substring(0, 1).toUpperCase() + lName.substring(1);
 	let phone_ = "";
-	for (let ix = 0; ix < 11; ix++){
+	for (let ix = 0; ix < 10; ix++){
 		phone_ += ""+helpers.random.integer(9);
 	}
 
