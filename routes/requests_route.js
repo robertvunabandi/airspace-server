@@ -248,24 +248,17 @@ router.post("/accept", function (request, response, next) {
 				} else {
 					// fix the pending and accepted count
 					let fixPendingAndAcceptedCount = function (savedReq) {
-						travelNotice.pending_requests_count -= 1;
-						travelNotice.accepted_requests_count += 1;
+						let currentPendingCount = isEmpty(travelNotice.pending_requests_count) || isANumber(travelNotice.pending_requests_count) ? 0 : travelNotice.pending_requests_count;
+						let currentAcceptedCount = isEmpty(travelNotice.accepted_requests_count) || isANumber(travelNotice.accepted_requests_count) ? 0 : travelNotice.accepted_requests_count;
+						// this being less than 0 would never happen but you never know...
+						travelNotice.pending_requests_count = currentPendingCount - 1 < 0 ? 0 : currentPendingCount - 1;
+						travelNotice.accepted_requests_count = currentAcceptedCount + 1;
 						travelNotice.save(function (savingError, savedTn) {
 							if (savingError) {
 								callback(500, savedReq, travelNotice, "Error while updating the travel notice. Travel notice was found however.", savingError);
 							} else {
+								sendNotification(shippingRequest.ruid, savedTn._id, savedReq._id, savedTn.tuid);
 								callback(201, savedReq, savedTn, "Request accepted", false);
-								let n = new Notification({
-									user_id: savedReq.ruid,
-									message: "Your request has been accepted!", // TODO - ADD A USER NAME HERE (TO XYZ)
-									sent: false,
-									date_received: helpers.newDate(),
-									travel_notice_from_id: savedTn._id,
-									request_from_id: savedReq._id,
-									user_from_id: savedTn.tuid,
-									action: 11
-								});
-								n.save();
 							}
 						});
 					};
@@ -292,6 +285,24 @@ router.post("/accept", function (request, response, next) {
 			});
 		}
 	});
+
+	let sendNotification = function(user_id, tnid, rqid, usrfromid) {
+		User.findOne({_id: usrfromid}, function(findingError, userFound){
+			if (findingError) {} else if (isEmpty(userFound)) {} else {
+				let n = new Notification({
+					user_id: user_id,
+					message: `Your request to ${userFound.f_name} ${userFound.l_name} has been accepted. Congratulations :)`, // TODO - Add a to user name (TO XYZ)
+					sent: false,
+					date_received: helpers.newDate(),
+					travel_notice_from_id: tnid,
+					request_from_id: rqid,
+					user_from_id: usrfromid,
+					action: 11
+				});
+				n.save();
+			}
+		});
+	};
 });
 
 /* POST send or receive request, changes status from 0 to 2
@@ -327,23 +338,16 @@ router.post("/decline", function (request, response, next) {
 				} else {
 					// fix the pending and accepted count
 					let fixPendingAndAcceptedCount = function (savedReq) {
-						travelNotice.pending_requests_count -= 1;
+						// update the pending count then save the travel notice
+						let currentPendingCount = isEmpty(travelNotice.pending_requests_count) || isANumber(travelNotice.pending_requests_count) ? 0 : travelNotice.pending_requests_count;
+						travelNotice.pending_requests_count = currentPendingCount - 1 < 0 ? 0 : currentPendingCount - 1;
 						travelNotice.save(function (savingError, savedTn) {
 							if (savingError) {
 								callback(500, savedReq, travelNotice, "Error while updating the travel notice. Travel notice was found however.", savingError);
 							} else {
+								// get the user via the id of the requester and send a notification
+								sendNotification(shippingRequest.ruid, savedTn._id, savedReq._id, savedTn.tuid);
 								callback(201, savedReq, savedTn, "Request declined", false); // **SUCCESS-CALL**
-								let n = new Notification({
-									user_id: savedReq.ruid,
-									message: "Your request has been declined :(", // TODO - Add a to user name (TO XYZ)
-									sent: false,
-									date_received: helpers.newDate(),
-									travel_notice_from_id: savedTn._id,
-									request_from_id: savedReq._id,
-									user_from_id: savedTn.tuid,
-									action: 12
-								});
-								n.save();
 							}
 						});
 					};
@@ -370,6 +374,24 @@ router.post("/decline", function (request, response, next) {
 			});
 		}
 	});
+
+	let sendNotification = function(user_id, tnid, rqid, usrfromid) {
+		User.findOne({_id: usrfromid}, function(findingError, userFound){
+			if (findingError) {} else if (isEmpty(userFound)) {} else {
+				let n = new Notification({
+					user_id: user_id,
+					message: `Your request to ${userFound.f_name} ${userFound.l_name} has been declined. We apologize :(`, // TODO - Add a to user name (TO XYZ)
+					sent: false,
+					date_received: helpers.newDate(),
+					travel_notice_from_id: tnid,
+					request_from_id: rqid,
+					user_from_id: usrfromid,
+					action: 12
+				});
+				n.save();
+			}
+		});
+	};
 });
 
 /* GET
@@ -722,6 +744,16 @@ router.post("/delete", function (request, response, next) {
 						deleteShippingRequest(foundTN);
 					} else {
 						let saveTravel = function () {
+							if (foundSR.action === 0) {
+								// if pending
+								let currentCount = isEmpty(foundTN.pending_requests_count) || isANumber(foundTN.pending_requests_count) ? 0 : foundTN.pending_requests_count;
+								foundTN.pending_requests_count = currentCount - 1 < 0 ? 0 : currentCount - 1;
+							} else if (foundSR.action === 1) {
+								// if accepted
+								let currentCount = isEmpty(foundTN.accepted_requests_count) || isANumber(foundTN.accepted_requests_count) ? 0 : foundTN.accepted_requests_count;
+								foundTN.accepted_requests_count = currentCount - 1 < 0 ? 0 : currentCount - 1;
+							}
+
 							foundTN.save(function (savingError, savedTn) {
 								if (savingError) {
 									successObjectMessage.travel_notice = {
@@ -738,7 +770,7 @@ router.post("/delete", function (request, response, next) {
 							});
 						};
 
-						// remove this request in the traven notice and then save
+						// remove this request in the travel notice and then save
 						for (let i = 0; i < foundTN.requests_ids.length; i++) {
 							if (foundTN.requests_ids[i].request_id == request_id) {
 								foundTN.requests_ids.splice(i, 1);
