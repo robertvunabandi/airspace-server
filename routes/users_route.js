@@ -35,11 +35,19 @@ router.post('/add', function (request, response, next) {
 		response.send(JSON.stringify(server_response));
 	};
 
+	let fName = sf_req(request, "f_name", "new_user"),
+		lName = sf_req(request, "l_name", "new_user"),
+		_email = sf_req(request, "email", "new_user");
+
+	// make names uppercase first letter
+	fName = fName.substring(0, 1).toUpperCase() + fName.substring(1);
+	lName = lName.substring(0, 1).toUpperCase() + lName.substring(1);
+
 	// get the user
 	let newUser = new User({
-		f_name: sf_req(request, "f_name", "new_user"),
-		l_name: sf_req(request, "l_name", "new_user"),
-		email: sf_req(request, "email", "new_user"),
+		f_name: fName,
+		l_name: lName,
+		email: _email,
 		location: "the best place on earth",
 		favorite_travel_place: "wherever has the cheapest flights",
 		suitcase_color_integer: helpers.random.integer(9), // 9 is the index of rainbow
@@ -52,7 +60,7 @@ router.post('/add', function (request, response, next) {
 		// missing here: dob, phone, travel_notices_ids, requests_ids
 	});
 
-	if (isEmpty(sf_req(request, "f_name", "new_user")) || isEmpty(sf_req(request, "l_name", "new_user")) || isEmpty(sf_req(request, "email", "new_user"))) {
+	if (fName || lName || _email) {
 		callback(403, "Some or all of the parameters were not entered. Please enter all informations.", null, true);
 	} else {
 		/* check if user exists in database just by email first,
