@@ -45,8 +45,8 @@ router.get('/travels', function (request, response, next) {
 		url: `https://www.air-port-codes.com/api/v1/multi?term=${fromQuery}`,
 		method: "GET",
 		headers: {
-			"APC-Auth": "c301986eb3",
-			"APC-Auth-Secret": "4c4de6bc0ea3f5b"
+			"APC-Auth": helpers.AIRPORT_APC_AUTH,
+			"APC-Auth-Secret": helpers.AIRPORT_APC_AUTH_SECRET
 		}
 	};
 
@@ -54,8 +54,8 @@ router.get('/travels', function (request, response, next) {
 		url: `https://www.air-port-codes.com/api/v1/multi?term=${toQuery}`,
 		method: "GET",
 		headers: {
-			"APC-Auth": "c301986eb3",
-			"APC-Auth-Secret": "4c4de6bc0ea3f5b"
+			"APC-Auth": helpers.AIRPORT_APC_AUTH,
+			"APC-Auth-Secret": helpers.AIRPORT_APC_AUTH_SECRET
 		}
 	};
 	// variable to hold the airports and functions to get them

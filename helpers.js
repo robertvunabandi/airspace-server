@@ -263,6 +263,8 @@ let helpers = {
 			fxnGood(objectCheck);
 		}
 	}, /** BELOW ARE VARIABLES */
+	AIRPORT_APC_AUTH: "a546348859", // used to be c301986eb3
+	AIRPORT_APC_AUTH_SECRET: "dfee68f6260a0e4" // used to be 4c4de6bc0ea3f5b
 
 };
 
